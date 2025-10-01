@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import 'league_selection_screen.dart'; // Assuming this is needed for navigation after game selection
+import 'package:scorer/ProfileScreen.dart';
+import 'package:scorer/SearchScreen.dart';
+import 'login_screen.dart';
 
 class BadmintonScreen extends StatelessWidget {
   const BadmintonScreen({super.key});
@@ -71,14 +73,6 @@ class ThrowBallScreen extends StatelessWidget {
 class GameSelectionScreen extends StatelessWidget {
   const GameSelectionScreen({super.key});
 
-  // List of games in alphabetical order
-  static const List<String> games = [
-    'Badminton',
-    'Basketball',
-    'Cricket',
-    'Throw Ball',
-  ];
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -86,62 +80,43 @@ class GameSelectionScreen extends StatelessWidget {
         title: const Text('SCORER'),
         backgroundColor: Theme.of(context).colorScheme.primary,
       ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'Select a Game',
-              style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Colors.deepPurple),
+              child: Text('Menu', style: TextStyle(color: Colors.white, fontSize: 24)),
             ),
-          ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: games.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(
-                    games[index],
-                    style: const TextStyle(fontSize: 18),
-                  ),
-                  onTap: () {
-                    final selectedGame = games[index];
-                    if (selectedGame == 'Cricket') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const LeagueSelectionScreen(),
-                        ),
-                      );
-                    } else if (selectedGame == 'Badminton') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BadmintonScreen(),
-                        ),
-                      );
-                    } else if (selectedGame == 'Basketball') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const BasketballScreen(),
-                        ),
-                      );
-                    } else if (selectedGame == 'Throw Ball') {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const ThrowBallScreen(),
-                        ),
-                      );
-                    }
-                  },
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('Profile'),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.search),
+              title: const Text('Search'),
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(builder: (_) => SearchScreen()));
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Log out'),
+              onTap: () {
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (_) => LoginScreen()),
+                  (route) => false,
                 );
               },
             ),
-          ),
-        ],
+          ],
+        ),
+      ),
+      body: Center(
+        child: Text('Welcome!'), // No sports options shown
       ),
     );
   }

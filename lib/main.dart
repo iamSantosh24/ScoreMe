@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:scorer/GameSelectionScreen.dart';
+import 'login_screen.dart';
 
 void main() => runApp(const MyApp());
 
@@ -13,7 +13,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: const GameSelectionScreen(),
+      home: const LoginScreen(),
     );
   }
 }
