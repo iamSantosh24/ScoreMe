@@ -14,16 +14,37 @@ class GameHomeScreen extends StatefulWidget {
   State<GameHomeScreen> createState() => _GameHomeScreenState();
 }
 
-class _GameHomeScreenState extends State<GameHomeScreen> {
+class _GameHomeScreenState extends State<GameHomeScreen> with SingleTickerProviderStateMixin {
   List<String> teamAPlayers = [];
   List<String> teamBPlayers = [];
   bool loading = true;
   String error = '';
+  final ScrollController _teamAScrollController = ScrollController();
+  final ScrollController _teamBScrollController = ScrollController();
+  late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        if (_tabController.index == 0) {
+          _teamAScrollController.jumpTo(0);
+        } else if (_tabController.index == 1) {
+          _teamBScrollController.jumpTo(0);
+        }
+      }
+    });
     fetchTeamMembers();
+  }
+
+  @override
+  void dispose() {
+    _teamAScrollController.dispose();
+    _teamBScrollController.dispose();
+    _tabController.dispose();
+    super.dispose();
   }
 
   Future<void> fetchTeamMembers() async {
@@ -109,6 +130,7 @@ class _GameHomeScreenState extends State<GameHomeScreen> {
                           Text('League: $leagueName', style: const TextStyle(fontSize: 16)),
                         const SizedBox(height: 16),
                         TabBar(
+                          controller: _tabController,
                           tabs: [
                             Tab(text: teamA.isNotEmpty ? teamA : 'Team A'),
                             Tab(text: teamB.isNotEmpty ? teamB : 'Team B'),
@@ -116,37 +138,10 @@ class _GameHomeScreenState extends State<GameHomeScreen> {
                         ),
                         Expanded(
                           child: TabBarView(
+                            controller: _tabController,
                             children: [
-                              // Team A Tab
-                              teamAPlayers.isNotEmpty
-                                  ? ListView.builder(
-                                      itemCount: teamAPlayers.length,
-                                      itemBuilder: (context, idx) {
-                                        final username = teamAPlayers[idx];
-                                        return ListTile(
-                                          title: Text(username),
-                                          onTap: () {
-                                            openProfileOrPlayer(context, username);
-                                          },
-                                        );
-                                      },
-                                    )
-                                  : const Center(child: Text('No players found for this team.')),
-                              // Team B Tab
-                              teamBPlayers.isNotEmpty
-                                  ? ListView.builder(
-                                      itemCount: teamBPlayers.length,
-                                      itemBuilder: (context, idx) {
-                                        final username = teamBPlayers[idx];
-                                        return ListTile(
-                                          title: Text(username),
-                                          onTap: () {
-                                            openProfileOrPlayer(context, username);
-                                          },
-                                        );
-                                      },
-                                    )
-                                  : const Center(child: Text('No players found for this team.')),
+                              _TeamPlayersTab(players: teamAPlayers, onTap: openProfileOrPlayer, scrollController: _teamAScrollController),
+                              _TeamPlayersTab(players: teamBPlayers, onTap: openProfileOrPlayer, scrollController: _teamBScrollController),
                             ],
                           ),
                         ),
@@ -155,5 +150,36 @@ class _GameHomeScreenState extends State<GameHomeScreen> {
         ),
       ),
     );
+  }
+}
+
+class _TeamPlayersTab extends StatelessWidget {
+  final List<String> players;
+  final Function(BuildContext, String) onTap;
+  final ScrollController scrollController;
+  const _TeamPlayersTab({required this.players, required this.onTap, required this.scrollController});
+
+  @override
+  Widget build(BuildContext context) {
+    if (players.isNotEmpty) {
+      return Expanded(
+        child: ListView.builder(
+          controller: scrollController,
+          padding: EdgeInsets.zero,
+          itemCount: players.length,
+          itemBuilder: (context, idx) {
+            final username = players[idx];
+            return ListTile(
+              title: Text(username),
+              onTap: () {
+                onTap(context, username);
+              },
+            );
+          },
+        ),
+      );
+    } else {
+      return const Center(child: Text('No players found for this team.'));
+    }
   }
 }
