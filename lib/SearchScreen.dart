@@ -3,6 +3,8 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'TournamentHomeScreen.dart';
 import 'PlayerProfileScreen.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'ProfileScreen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -53,6 +55,22 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
+  Future<void> openProfileOrPlayer(BuildContext context, String username) async {
+    final storage = const FlutterSecureStorage();
+    final loggedInUsername = await storage.read(key: 'auth_username');
+    if (loggedInUsername == username) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => PlayerProfileScreen(username: username)),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -100,12 +118,7 @@ class _SearchScreenState extends State<SearchScreen> {
             ...players.map((p) => ListTile(
               title: Text(p['username']),
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => PlayerProfileScreen(username: p['username']),
-                  ),
-                );
+                openProfileOrPlayer(context, p['username']);
               },
             )),
           ],

@@ -1,36 +1,159 @@
 import 'package:flutter/material.dart';
+import 'PlayerProfileScreen.dart';
+import 'leagues_util.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'ProfileScreen.dart';
 
-class GameHomeScreen extends StatelessWidget {
+class GameHomeScreen extends StatefulWidget {
   final Map<String, dynamic> game;
   const GameHomeScreen({super.key, required this.game});
 
   @override
-  Widget build(BuildContext context) {
-    final teamA = game['teamA'] ?? '';
-    final teamB = game['teamB'] ?? '';
-    final date = game['date'] != null ? DateTime.parse(game['date']).toLocal() : null;
-    String formattedDate = '';
-    if (date != null) {
-      formattedDate = '${date.day}/${date.month}/${date.year}';
+  State<GameHomeScreen> createState() => _GameHomeScreenState();
+}
+
+class _GameHomeScreenState extends State<GameHomeScreen> {
+  List<String> teamAPlayers = [];
+  List<String> teamBPlayers = [];
+  bool loading = true;
+  String error = '';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchTeamMembers();
+  }
+
+  Future<void> fetchTeamMembers() async {
+    final teamAId = widget.game['teamAId'] ?? '';
+    final teamBId = widget.game['teamBId'] ?? '';
+    try {
+      final teamARes = await http.get(Uri.parse('http://192.168.1.134:3000/team/members?teamId=$teamAId'));
+      final teamBRes = await http.get(Uri.parse('http://192.168.1.134:3000/team/members?teamId=$teamBId'));
+      if (teamARes.statusCode == 200 && teamBRes.statusCode == 200) {
+        final teamAData = json.decode(teamARes.body);
+        final teamBData = json.decode(teamBRes.body);
+        setState(() {
+          teamAPlayers = (teamAData['members'] as List<dynamic>? ?? []).cast<String>();
+          teamBPlayers = (teamBData['members'] as List<dynamic>? ?? []).cast<String>();
+          loading = false;
+        });
+      } else {
+        setState(() {
+          error = 'Failed to fetch team members.';
+          loading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        error = 'Error fetching team members.';
+        loading = false;
+      });
     }
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Game Details'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Teams: $teamA vs $teamB', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 12),
-            if (formattedDate.isNotEmpty)
-              Text('Date: $formattedDate', style: const TextStyle(fontSize: 16)),
-            // Add more game details here as needed
-          ],
+  }
+
+  Future<void> openProfileOrPlayer(BuildContext context, String username) async {
+    final storage = const FlutterSecureStorage();
+    final loggedInUsername = await storage.read(key: 'auth_username');
+    if (loggedInUsername == username) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const ProfileScreen()),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => PlayerProfileScreen(username: username)),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final teamA = widget.game['teamAName'] ?? widget.game['teamA'] ?? '';
+    final teamB = widget.game['teamBName'] ?? widget.game['teamB'] ?? '';
+    final dateStr = widget.game['scheduledDate']?.toString() ?? widget.game['date']?.toString();
+    final date = dateStr != null && dateStr.isNotEmpty ? DateTime.parse(dateStr).toLocal() : null;
+    String formattedDate = '';
+    String formattedTime = '';
+    if (date != null) {
+      formattedDate = monthName(date.month) + ' ' + date.day.toString().padLeft(2, '0') + ', ' + date.year.toString();
+      formattedTime = formatTime(date);
+    }
+    final location = widget.game['location'] ?? '';
+    final leagueName = widget.game['leagueName'] ?? '';
+    return DefaultTabController(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Game Details'),
+        ),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: loading
+              ? const Center(child: CircularProgressIndicator())
+              : error.isNotEmpty
+                  ? Center(child: Text(error, style: const TextStyle(color: Colors.red)))
+                  : Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('$teamA vs $teamB', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        if (formattedDate.isNotEmpty && formattedTime.isNotEmpty)
+                          Text('Date: $formattedDate at $formattedTime', style: const TextStyle(fontSize: 16)),
+                        if (location.isNotEmpty)
+                          Text('Location: $location', style: const TextStyle(fontSize: 16)),
+                        if (leagueName.isNotEmpty)
+                          Text('League: $leagueName', style: const TextStyle(fontSize: 16)),
+                        const SizedBox(height: 16),
+                        TabBar(
+                          tabs: [
+                            Tab(text: teamA.isNotEmpty ? teamA : 'Team A'),
+                            Tab(text: teamB.isNotEmpty ? teamB : 'Team B'),
+                          ],
+                        ),
+                        Expanded(
+                          child: TabBarView(
+                            children: [
+                              // Team A Tab
+                              teamAPlayers.isNotEmpty
+                                  ? ListView.builder(
+                                      itemCount: teamAPlayers.length,
+                                      itemBuilder: (context, idx) {
+                                        final username = teamAPlayers[idx];
+                                        return ListTile(
+                                          title: Text(username),
+                                          onTap: () {
+                                            openProfileOrPlayer(context, username);
+                                          },
+                                        );
+                                      },
+                                    )
+                                  : const Center(child: Text('No players found for this team.')),
+                              // Team B Tab
+                              teamBPlayers.isNotEmpty
+                                  ? ListView.builder(
+                                      itemCount: teamBPlayers.length,
+                                      itemBuilder: (context, idx) {
+                                        final username = teamBPlayers[idx];
+                                        return ListTile(
+                                          title: Text(username),
+                                          onTap: () {
+                                            openProfileOrPlayer(context, username);
+                                          },
+                                        );
+                                      },
+                                    )
+                                  : const Center(child: Text('No players found for this team.')),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
         ),
       ),
     );
   }
 }
-

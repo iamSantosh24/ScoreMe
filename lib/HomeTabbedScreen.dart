@@ -92,12 +92,22 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                           if (bDate == null) return -1;
                           return aDate.compareTo(bDate);
                         });
-                        return sortedGames.isEmpty
+                        final now = DateTime.now();
+                        final today = DateTime(now.year, now.month, now.day);
+                        final upcomingGames = sortedGames.where((game) {
+                          final dateStr = game['scheduledDate']?.toString() ?? '';
+                          if (dateStr.isEmpty) return false;
+                          final gameDate = DateTime.tryParse(dateStr)?.toLocal();
+                          if (gameDate == null) return false;
+                          final gameDay = DateTime(gameDate.year, gameDate.month, gameDate.day);
+                          return !gameDay.isBefore(today);
+                        }).toList();
+                        return upcomingGames.isEmpty
                             ? const Center(child: Text('No scheduled games found'))
                             : ListView.builder(
-                                itemCount: sortedGames.length,
+                                itemCount: upcomingGames.length,
                                 itemBuilder: (context, index) {
-                                  final game = sortedGames[index];
+                                  final game = upcomingGames[index];
                                   final dateStr = game['scheduledDate']?.toString() ?? '';
                                   String formattedDate = '';
                                   if (dateStr.isNotEmpty) {

@@ -39,25 +39,6 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
     }
   }
 
-  Future<void> updatePlayerDetails() async {
-    setState(() { loading = true; error = ''; });
-    final res = await http.post(
-      Uri.parse('http://192.168.1.134:3000/player/update'),
-      headers: {'Content-Type': 'application/json'},
-      body: json.encode({
-        'username': widget.username,
-        'teamName': teamName,
-        'contactNumber': contactNumber,
-      }),
-    );
-    setState(() { loading = false; });
-    if (res.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Profile updated')));
-    } else {
-      setState(() { error = 'Failed to update profile'; });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -83,10 +64,6 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                     controller: TextEditingController(text: contactNumber),
                   ),
                   const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: updatePlayerDetails,
-                    child: const Text('Update'),
-                  ),
                   if (error.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),

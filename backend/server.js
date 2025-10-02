@@ -575,4 +575,17 @@ app.get('/scheduled-games', async (req, res) => {
   }
 });
 
+// Endpoint to fetch members of a specific team
+app.get('/team/members', async (req, res) => {
+  const { teamId } = req.query;
+  if (!teamId) return res.status(400).json({ error: 'Missing teamId' });
+  try {
+    const team = await Teams.findOne({ _id: teamId });
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+    res.json({ members: team.members || [] });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch team members' });
+  }
+});
+
 app.listen(3000, '0.0.0.0', () => console.log('Backend running on http://0.0.0.0:3000'));
