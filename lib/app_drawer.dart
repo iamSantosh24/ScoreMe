@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'ProfileScreen.dart';
-import 'SearchScreen.dart';
+import 'profile_screen.dart';
+import 'search_screen.dart';
 import 'login_screen.dart';
 
 class AppDrawer extends StatelessWidget {

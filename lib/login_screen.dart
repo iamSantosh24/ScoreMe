@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
-import 'RegisterScreen.dart';
-import 'HomeTabbedScreen.dart';
+import 'register_screen.dart';
+import 'home_tabbed_screen.dart';
 
 const String apiBaseUrl = 'http://192.168.1.134:3000'; // Replace with your actual IP
 

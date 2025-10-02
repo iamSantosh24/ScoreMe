@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../leagues_util.dart';
-import '../LeagueHomeScreen.dart';
+import '../league_home_screen.dart';
 
 class LeagueCard extends StatelessWidget {
   final League league;

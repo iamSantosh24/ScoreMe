@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../GameHomeScreen.dart';
+import '../game_home_screen.dart';
 
 class GameCard extends StatelessWidget {
   final Map<String, dynamic> game;

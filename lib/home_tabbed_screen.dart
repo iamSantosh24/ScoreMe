@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'AppDrawer.dart';
-import 'MatchScheduleScreen.dart';
+import 'app_drawer.dart';
+import 'match_schedule_screen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
 import 'widgets/GameCard.dart';
 import 'widgets/LeagueCard.dart';

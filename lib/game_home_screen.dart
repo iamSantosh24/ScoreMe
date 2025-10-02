@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'PlayerProfileScreen.dart';
+import 'player_profile_screen.dart';
 import 'leagues_util.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'ProfileScreen.dart';
+import 'profile_screen.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/GameHomeViewModel.dart';
 

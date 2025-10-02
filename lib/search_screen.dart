@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'TournamentHomeScreen.dart';
-import 'PlayerProfileScreen.dart';
+import 'tournament_home_screen.dart';
+import 'player_profile_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'ProfileScreen.dart';
+import 'profile_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});

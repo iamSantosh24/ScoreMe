@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:scorer/ProfileScreen.dart';
-import 'package:scorer/SearchScreen.dart';
+import 'package:scorer/profile_screen.dart';
+import 'package:scorer/search_screen.dart';
 import 'login_screen.dart';
 
 class BadmintonScreen extends StatelessWidget {
