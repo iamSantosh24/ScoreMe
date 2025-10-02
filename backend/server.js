@@ -71,15 +71,43 @@ const TeamPlayerRequest = mongoose.model('TeamPlayerRequest', teamPlayerRequestS
 
 // ScheduledGame schema/model
 const scheduledGameSchema = new mongoose.Schema({
-  gameName: { type: String, required: true },
-  leagueId: { type: String, required: true },
-  leagueName: { type: String }, // Added leagueName field
-  teamA: { type: String, required: true },
-  teamB: { type: String, required: true },
-  date: { type: Date, required: true }
-});
-// This model will use the 'scheduledgames' collection in MongoDB
+  _id: { type: String, required: true },
+  gameName: { type: String },
+  leagueId: { type: String },
+  teamAId: { type: String },
+  teamAName: { type: String },
+  teamBId: { type: String },
+  teamBName: { type: String },
+  scheduledDate: { type: Date },
+  location: { type: String },
+  status: { type: String },
+  sport: { type: String },
+  tournamentId: { type: String }
+}, { collection: 'scheduledgames' });
 const ScheduledGame = mongoose.model('ScheduledGame', scheduledGameSchema);
+
+// Leagues schema/model
+const leagueSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  name: { type: String, required: true },
+  sport: { type: String },
+  region: { type: String },
+  createdAt: { type: Date },
+  status: { type: String },
+  teams: [{ type: String }]
+});
+const Leagues = mongoose.model('Leagues', leagueSchema, 'leagues');
+
+// Team schema/model for teams collection
+const teamsSchema = new mongoose.Schema({
+  _id: { type: String, required: true },
+  name: { type: String },
+  leagueId: { type: mongoose.Schema.Types.Mixed }, // can be array or string
+  members: [{ type: String }],
+  sport: { type: String },
+  createdAt: { type: Date }
+});
+const Teams = mongoose.model('Teams', teamsSchema, 'teams');
 
 // Helper to check god_admin status
 async function isGodAdmin(username) {
@@ -379,55 +407,77 @@ app.get('/search', async (req, res) => {
   }
 });
 
-// Get user's leagues and games
-app.get('/user/leagues-and-games', async (req, res) => {
+// Get user's leagues, games and teams
+app.get('/user/leagues-games-teams', async (req, res) => {
   const { username } = req.query;
   if (!username) return res.status(400).json({ error: 'Missing username' });
   try {
+    // --- Teams logic (same as /user/teams) ---
     const user = await User.findOne({ username });
     if (!user) return res.status(404).json({ error: 'User not found' });
-    const leagues = await Tournament.find({ members: username });
-    const leagueObjs = leagues.map(l => ({ _id: l._id, name: l.name }));
-    const gamesSet = new Set();
-    leagues.forEach(l => {
-      if (Array.isArray(l.games)) {
-        l.games.forEach(g => gamesSet.add(g));
-      }
-    });
-    const games = Array.from(gamesSet);
-    res.json({ leagues: leagueObjs, games });
-  } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch leagues and games' });
-  }
-});
+    let teams = [];
+    if (Array.isArray(user.teams) && user.teams.length > 0) {
+      teams = await Teams.find({ _id: { $in: user.teams } });
+    } else {
+      teams = await Teams.find({ members: username });
+    }
+    const teamObjs = teams.map(t => ({
+      _id: t._id,
+      name: t.name,
+      leagueId: t.leagueId,
+      sport: t.sport
+    }));
 
-// Endpoint: get scheduled games for a user
-app.get('/user/scheduled-games', async (req, res) => {
-  const { username } = req.query;
-  if (!username) return res.status(400).json({ error: 'Missing username' });
-  try {
-    // Find all teams for user
-    const teams = await Team.find({ members: username });
-    const teamNames = teams.map(t => t.name);
-    // Find all games for user's teams
+    // --- Leagues logic (same as /league/scheduled-games, but fetch leagues for user's teams) ---
+    const leagueIds = [
+      ...new Set(
+        teams.flatMap(team => Array.isArray(team.leagueId) ? team.leagueId : [team.leagueId])
+      )
+    ].filter(Boolean);
+    const leagues = await Leagues.find({ _id: { $in: leagueIds } });
+    const leagueObjs = leagues.map(l => ({
+      _id: l._id,
+      name: l.name,
+      sport: l.sport,
+      region: l.region,
+      status: l.status,
+      teams: l.teams
+    }));
+
+    // --- Games logic (same as /user/scheduled-games) ---
+    const teamIds = teams.map(t => t._id);
     const games = await ScheduledGame.find({
       $or: [
-        { teamA: { $in: teamNames } },
-        { teamB: { $in: teamNames } }
+        { teamAId: { $in: teamIds } },
+        { teamBId: { $in: teamIds } }
       ]
     });
-    // Return date, teamA, teamB, gameName, leagueId and leagueName for each scheduled game
-    const result = games.map(g => ({
-      date: g.date,
-      teamA: g.teamA,
-      teamB: g.teamB,
-      gameName: g.gameName,
-      leagueId: g.leagueId,
-      leagueName: g.leagueName
-    }));
-    res.json({ games: result });
+    console.log('Raw games found:', games);
+    // Create a map of leagueId to leagueName
+    const leagueIdToName = {};
+    leagues.forEach(l => { leagueIdToName[l._id] = l.name; });
+    const gameObjs = games.map(g => {
+      return {
+        _id: g._id,
+        gameName: g.gameName || g.sport,
+        leagueId: g.leagueId,
+        leagueName: leagueIdToName[g.leagueId],
+        teamAId: g.teamAId,
+        teamAName: g.teamAName,
+        teamBId: g.teamBId,
+        teamBName: g.teamBName,
+        scheduledDate: g.scheduledDate,
+        location: g.location,
+        status: g.status,
+        sport: g.sport,
+        tournamentId: g.tournamentId
+      };
+    });
+    console.log('Final gameObjs:', gameObjs);
+    console.log('Response:', { leagues: leagueObjs, games: gameObjs, teams: teamObjs });
+    res.json({ leagues: leagueObjs, games: gameObjs, teams: teamObjs });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch scheduled games' });
+    res.status(500).json({ error: 'Failed to fetch leagues, games, and teams' });
   }
 });
 

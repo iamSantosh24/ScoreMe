@@ -6,9 +6,16 @@ class League {
 
   factory League.fromJson(Map<String, dynamic> json) {
     return League(
-      id: json['_id'] ?? '',
-      name: json['name'] ?? '',
+      id: json['leagueId'] ?? json['_id'] ?? json['id'] ?? '',
+      name: json['leagueName'] ?? json['name'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+    };
   }
 }
 

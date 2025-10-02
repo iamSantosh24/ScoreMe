@@ -1,0 +1,37 @@
+import 'package:flutter/material.dart';
+import '../leagues_util.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
+class LeagueHomeViewModel extends ChangeNotifier {
+  final League league;
+  List<dynamic> scheduledGames = [];
+  bool loadingScheduled = true;
+  String errorScheduled = '';
+
+  LeagueHomeViewModel({required this.league}) {
+    fetchScheduledGames();
+  }
+
+  Future<void> fetchScheduledGames() async {
+    loadingScheduled = true;
+    errorScheduled = '';
+    notifyListeners();
+    try {
+      final res = await http.get(
+        Uri.parse('http://192.168.1.134:3000/league/scheduled-games?leagueId=${league.id}'),
+      );
+      if (res.statusCode == 200) {
+        final data = json.decode(res.body);
+        scheduledGames = data['games'] ?? [];
+      } else {
+        errorScheduled = 'Failed to fetch scheduled games: Status ${res.statusCode}';
+      }
+    } catch (e) {
+      errorScheduled = 'Network error: $e';
+    }
+    loadingScheduled = false;
+    notifyListeners();
+  }
+}
+

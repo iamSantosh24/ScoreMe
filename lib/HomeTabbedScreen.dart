@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'AppDrawer.dart';
 import 'MatchScheduleScreen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
 import 'widgets/GameCard.dart';
 import 'widgets/LeagueCard.dart';
+import 'leagues_util.dart';
 
 class HomeTabbedScreen extends StatefulWidget {
   final String username;
@@ -24,9 +24,10 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
     viewModel = HomeTabbedViewModel();
-    viewModel.fetchUserLeaguesAndGames(widget.username);
+    // Fetch all tab data once after login
+    viewModel.fetchAllTabData(widget.username);
   }
 
   @override
@@ -61,6 +62,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                 tabs: const [
                   Tab(text: 'My Games'),
                   Tab(text: 'My Leagues'),
+                  Tab(text: 'My Teams'), // New tab
                 ],
               ),
             ),
@@ -78,32 +80,54 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                     controller: _tabController,
                     children: [
                       // My Games Tab
-                      vm.scheduledGames.isEmpty
-                          ? const Center(child: Text('No scheduled games found'))
-                          : ListView.builder(
-                              itemCount: vm.scheduledGames.length,
-                              itemBuilder: (context, index) {
-                                final game = vm.scheduledGames[index];
-                                final leagueName = game['leagueName'] ?? '';
-                                final gameName = game['gameName'] ?? '';
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (leagueName.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                                        child: Text('League: $leagueName', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                                      ),
-                                    if (gameName.isNotEmpty)
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
-                                        child: Text('Game: $gameName', style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500)),
-                                      ),
-                                    GameCard(game: game),
-                                  ],
-                                );
-                              },
-                            ),
+                      (() {
+                        final sortedGames = List<Map<String, dynamic>>.from(vm.scheduledGames);
+                        sortedGames.sort((a, b) {
+                          final aDateStr = a['scheduledDate']?.toString() ?? '';
+                          final bDateStr = b['scheduledDate']?.toString() ?? '';
+                          DateTime? aDate = aDateStr.isNotEmpty ? DateTime.tryParse(aDateStr) : null;
+                          DateTime? bDate = bDateStr.isNotEmpty ? DateTime.tryParse(bDateStr) : null;
+                          if (aDate == null && bDate == null) return 0;
+                          if (aDate == null) return 1;
+                          if (bDate == null) return -1;
+                          return aDate.compareTo(bDate);
+                        });
+                        return sortedGames.isEmpty
+                            ? const Center(child: Text('No scheduled games found'))
+                            : ListView.builder(
+                                itemCount: sortedGames.length,
+                                itemBuilder: (context, index) {
+                                  final game = sortedGames[index];
+                                  final dateStr = game['scheduledDate']?.toString() ?? '';
+                                  String formattedDate = '';
+                                  if (dateStr.isNotEmpty) {
+                                    try {
+                                      final date = DateTime.parse(dateStr).toLocal();
+                                      final month = monthName(date.month);
+                                      final time = formatTime(date);
+                                      formattedDate = '$month ${date.day.toString().padLeft(2, '0')}, ${date.year} at $time';
+                                    } catch (_) {}
+                                  }
+                                  return Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      if (formattedDate.isNotEmpty)
+                                        Padding(
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          child: Text(
+                                            formattedDate,
+                                            style: const TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      GameCard(game: game),
+                                    ],
+                                  );
+                                },
+                              );
+                      })(),
                       // My Leagues Tab
                       vm.leagues.isEmpty
                           ? const Center(child: Text('No leagues found'))
@@ -111,9 +135,32 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               itemCount: vm.leagues.length,
                               itemBuilder: (context, index) {
                                 final league = vm.leagues[index];
+                                print('LeagueCard league: ${league.toJson()}');
                                 return LeagueCard(
                                   league: league,
                                   onTap: () => openLeagueSchedule(league.id),
+                                );
+                              },
+                            ),
+                      // My Teams Tab
+                      vm.teams == null || vm.teams.isEmpty
+                          ? const Center(child: Text('No teams found'))
+                          : ListView.builder(
+                              itemCount: vm.teams.length,
+                              itemBuilder: (context, index) {
+                                final team = vm.teams[index];
+                                // If you have a TeamCard widget, use it here. Otherwise, use a simple Card.
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 8,
+                                  ),
+                                  child: ListTile(
+                                    title: Text(team['name'] ?? 'Team'),
+                                    subtitle: Text(
+                                      'Sport: ${team['sport'] ?? ''}',
+                                    ),
+                                  ),
                                 );
                               },
                             ),
