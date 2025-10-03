@@ -45,6 +45,7 @@ class _GameHomeScreenState extends State<GameHomeScreen> with SingleTickerProvid
   Future<void> openProfileOrPlayer(BuildContext context, String username) async {
     final storage = const FlutterSecureStorage();
     final loggedInUsername = await storage.read(key: 'auth_username');
+    final role = await storage.read(key: 'role') ?? '';
     if (loggedInUsername == username) {
       Navigator.push(
         context,
@@ -53,7 +54,7 @@ class _GameHomeScreenState extends State<GameHomeScreen> with SingleTickerProvid
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => PlayerProfileScreen(username: username)),
+        MaterialPageRoute(builder: (_) => PlayerProfileScreen(username: username, role: role)),
       );
     }
   }

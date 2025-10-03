@@ -69,7 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save token and username for profile screen
         await _secureStorage.write(key: 'auth_token', value: token);
         await _secureStorage.write(key: 'auth_username', value: username);
-        // Navigate to HomeTabbedScreen after login, passing role
+        await _secureStorage.write(key: 'auth_role', value: role);
         Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeTabbedScreen(username: username, role: role)));
       } else {
         print('Login error: ${response.body}');

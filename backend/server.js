@@ -701,7 +701,8 @@ app.get('/player', async (req, res) => {
     res.json({
       username: user.username,
       teamName: user.teamName || '',
-      contactNumber: user.contactNumber || ''
+      contactNumber: user.contactNumber || '',
+      role: user.role || ''
     });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch player details' });
@@ -715,6 +716,31 @@ app.get('/teams/list', async (req, res) => {
     res.json({ teams });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// Endpoint to assign a new role to a user (god_admin and super_admin only)
+app.post('/user/assign-role', async (req, res) => {
+  const { username, role } = req.body;
+  if (!username || !role) {
+    return res.status(400).json({ error: 'Missing username or role' });
+  }
+  // Only allow valid roles
+  const validRoles = ['super_admin', 'admin'];
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: 'Invalid role' });
+  }
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    user.role = role;
+    await user.save();
+    res.json({ message: `Role updated to ${role}` });
+  } catch (err) {
+    console.error('Error updating user role:', err);
+    res.status(500).json({ error: 'Failed to update role', details: err.message });
   }
 });
 

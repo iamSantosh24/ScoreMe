@@ -4,7 +4,8 @@ import 'dart:convert';
 
 class PlayerProfileScreen extends StatefulWidget {
   final String username;
-  const PlayerProfileScreen({super.key, required this.username});
+  final String role;
+  const PlayerProfileScreen({super.key, required this.username, required this.role});
 
   @override
   State<PlayerProfileScreen> createState() => _PlayerProfileScreenState();
@@ -15,6 +16,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   String contactNumber = '';
   bool loading = false;
   String error = '';
+  String playerRole = '';
 
   @override
   void initState() {
@@ -33,14 +35,36 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
       setState(() {
         teamName = data['teamName'] ?? '';
         contactNumber = data['contactNumber'] ?? '';
+        playerRole = data['role'] ?? '';
       });
     } else {
       setState(() { error = 'Failed to fetch player details'; });
     }
   }
 
+  Future<void> assignRole(String newRole) async {
+    final res = await http.post(
+      Uri.parse('http://192.168.1.134:3000/user/assign-role'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({
+        'username': widget.username,
+        'role': newRole,
+      }),
+    );
+    if (res.statusCode == 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Role changed to $newRole')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to change role')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    print('PlayerProfileScreen role: \'${widget.role}\''); // Debug print
     return Scaffold(
       appBar: AppBar(title: Text('Player: ${widget.username}')),
       body: loading
@@ -69,10 +93,48 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
                       padding: const EdgeInsets.only(top: 16.0),
                       child: Text(error, style: const TextStyle(color: Colors.red)),
                     ),
+                  if (widget.role == 'god_admin' || widget.role == 'super_admin')
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: Text('Player\'s Current Role: ' + (playerRole.isNotEmpty ? playerRole : 'Player'), style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                    ),
+                  if (widget.role == 'god_admin' || widget.role == 'super_admin')
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: ElevatedButton(
+                        child: const Text('Make'),
+                        onPressed: () {
+                          showDialog(
+                            context: context,
+                            builder: (context) {
+                              List<String> options = [];
+                              if (widget.role == 'god_admin') {
+                                options = ['Super Admin', 'Admin'];
+                              } else if (widget.role == 'super_admin') {
+                                options = ['Admin'];
+                              }
+                              return AlertDialog(
+                                title: const Text('Make user'),
+                                content: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: options.map((opt) => ListTile(
+                                    title: Text(opt),
+                                    onTap: () async {
+                                      Navigator.pop(context);
+                                      String backendRole = opt == 'Super Admin' ? 'super_admin' : 'admin';
+                                      await assignRole(backendRole);
+                                    },
+                                  )).toList(),
+                                ),
+                              );
+                            },
+                          );
+                        },
+                      ),
+                    ),
                 ],
               ),
             ),
     );
   }
 }
-

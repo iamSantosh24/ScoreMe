@@ -58,6 +58,9 @@ class _SearchScreenState extends State<SearchScreen> {
   Future<void> openProfileOrPlayer(BuildContext context, String username) async {
     final storage = const FlutterSecureStorage();
     final loggedInUsername = await storage.read(key: 'auth_username');
+    print("Logged in username: $loggedInUsername");
+    final role = await storage.read(key: 'auth_role') ?? '';
+    print("Role: $role");
     if (loggedInUsername == username) {
       Navigator.push(
         context,
@@ -66,7 +69,7 @@ class _SearchScreenState extends State<SearchScreen> {
     } else {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => PlayerProfileScreen(username: username)),
+        MaterialPageRoute(builder: (_) => PlayerProfileScreen(username: username, role: role)),
       );
     }
   }
