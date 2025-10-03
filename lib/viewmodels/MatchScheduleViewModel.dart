@@ -19,27 +19,6 @@ class MatchScheduleViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> fetchLeagueName(String leagueId) async {
-    try {
-      final res = await http.get(
-        Uri.parse('http://192.168.1.134:3000/tournaments'),
-      );
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        final tournaments = data['tournaments'] ?? [];
-        for (final t in tournaments) {
-          final id = t['_id'] ?? t['name'];
-          if (id == leagueId) {
-            leagueName = t['name'] ?? leagueId;
-            break;
-          }
-        }
-      }
-    } catch (e) {
-      leagueName = leagueId;
-    }
-    notifyListeners();
-  }
 
   Future<void> fetchScheduledGames(String leagueId) async {
     loading = true;
@@ -47,13 +26,12 @@ class MatchScheduleViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.134:3000/scheduled-games?leagueId=$leagueId'),
+        Uri.parse('http://192.168.1.134:3000/league/scheduled-games?leagueId=$leagueId'),
       );
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         scheduledGames = data['games'] ?? [];
         this.leagueId = leagueId;
-        await fetchLeagueName(leagueId);
       } else {
         error = json.decode(res.body)['error'] ?? 'Failed to fetch games';
       }

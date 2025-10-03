@@ -21,7 +21,11 @@ db.once('open', () => console.log('Connected to MongoDB'));
 const userSchema = new mongoose.Schema({
   username: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, required: true }
+  role: { type: String, required: true },
+  firstName: { type: String, required: true },
+  lastName: { type: String, required: true },
+  teams: [{ type: String }], // Array of team IDs
+  contactNumber: { type: String }
 });
 const User = mongoose.model('User', userSchema);
 
@@ -133,14 +137,26 @@ async function requireGodAdmin(req, res, next) {
 
 // Registration endpoint (no role selection, always 'player')
 app.post('/register', async (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Missing fields' });
+  const { username, password, confirmPassword, firstName, lastName, contactNumber, teams } = req.body;
+  if (!username || !password || !confirmPassword || !firstName || !lastName) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  if (password !== confirmPassword) {
+    return res.status(400).json({ error: 'Passwords do not match' });
   }
   // Email format validation
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   if (!emailRegex.test(username)) {
     return res.status(400).json({ error: 'Username must be a valid email address' });
+  }
+  // Validate teams if provided
+  let validTeams = [];
+  if (Array.isArray(teams) && teams.length > 0) {
+    const foundTeams = await Teams.find({ _id: { $in: teams } });
+    validTeams = foundTeams.map(t => t._id);
+    if (validTeams.length !== teams.length) {
+      return res.status(400).json({ error: 'One or more selected teams are invalid' });
+    }
   }
   try {
     const existingUser = await User.findOne({ username });
@@ -148,7 +164,15 @@ app.post('/register', async (req, res) => {
       return res.status(409).json({ error: 'An account with this email already exists' });
     }
     const hashedPassword = bcrypt.hashSync(password, 8);
-    const newUser = new User({ username, password: hashedPassword, role: 'player' });
+    const newUser = new User({
+      username,
+      password: hashedPassword,
+      role: 'player',
+      firstName,
+      lastName,
+      contactNumber,
+      teams: validTeams
+    });
     await newUser.save();
     res.json({ message: 'User registered successfully' });
   } catch (err) {
@@ -409,55 +433,38 @@ app.get('/search', async (req, res) => {
 
 // Get user's leagues, games and teams
 app.get('/user/leagues-games-teams', async (req, res) => {
-  const { username } = req.query;
+  const { username, role } = req.query;
   if (!username) return res.status(400).json({ error: 'Missing username' });
   try {
-    // --- Teams logic (same as /user/teams) ---
-    const user = await User.findOne({ username });
-    if (!user) return res.status(404).json({ error: 'User not found' });
     let teams = [];
-    if (Array.isArray(user.teams) && user.teams.length > 0) {
-      teams = await Teams.find({ _id: { $in: user.teams } });
-    } else {
-      teams = await Teams.find({ members: username });
-    }
-    const teamObjs = teams.map(t => ({
-      _id: t._id,
-      name: t.name,
-      leagueId: t.leagueId,
-      sport: t.sport
-    }));
-
-    // --- Leagues logic (same as /league/scheduled-games, but fetch leagues for user's teams) ---
-    const leagueIds = [
-      ...new Set(
-        teams.flatMap(team => Array.isArray(team.leagueId) ? team.leagueId : [team.leagueId])
-      )
-    ].filter(Boolean);
-    const leagues = await Leagues.find({ _id: { $in: leagueIds } });
-    const leagueObjs = leagues.map(l => ({
-      _id: l._id,
-      name: l.name,
-      sport: l.sport,
-      region: l.region,
-      status: l.status,
-      teams: l.teams
-    }));
-
-    // --- Games logic (same as /user/scheduled-games) ---
-    const teamIds = teams.map(t => t._id);
-    const games = await ScheduledGame.find({
-      $or: [
-        { teamAId: { $in: teamIds } },
-        { teamBId: { $in: teamIds } }
-      ]
-    });
-    console.log('Raw games found:', games);
-    // Create a map of leagueId to leagueName
-    const leagueIdToName = {};
-    leagues.forEach(l => { leagueIdToName[l._id] = l.name; });
-    const gameObjs = games.map(g => {
-      return {
+    let leagues = [];
+    let games = [];
+    let leagueObjs = [];
+    let teamObjs = [];
+    let gameObjs = [];
+    if (role === 'god_admin') {
+      // God Admin: See all games, leagues, teams
+      teams = await Team.find({});
+      leagues = await Leagues.find({});
+      games = await ScheduledGame.find({});
+      leagueObjs = leagues.map(l => ({
+        _id: l._id,
+        name: l.name,
+        sport: l.sport,
+        region: l.region,
+        status: l.status,
+        teams: l.teams
+      }));
+      teamObjs = teams.map(t => ({
+        _id: t._id,
+        name: t.name,
+        leagueId: t.tournament,
+        sport: t.sport
+      }));
+      // Create a map of leagueId to leagueName
+      const leagueIdToName = {};
+      leagues.forEach(l => { leagueIdToName[l._id] = l.name; });
+      gameObjs = games.map(g => ({
         _id: g._id,
         gameName: g.gameName || g.sport,
         leagueId: g.leagueId,
@@ -471,10 +478,100 @@ app.get('/user/leagues-games-teams', async (req, res) => {
         status: g.status,
         sport: g.sport,
         tournamentId: g.tournamentId
-      };
-    });
-    console.log('Final gameObjs:', gameObjs);
-    console.log('Response:', { leagues: leagueObjs, games: gameObjs, teams: teamObjs });
+      }));
+    } else if (role === 'super_admin') {
+      // Super Admin: See all games and teams in leagues where user is super admin
+      const superAdminLeagues = await SuperAdmin.find({ username });
+      const leagueIds = superAdminLeagues.map(l => l.leagueId);
+      leagues = await Tournament.find({ _id: { $in: leagueIds } });
+      teams = await Team.find({ tournament: { $in: leagueIds } });
+      games = await ScheduledGame.find({ leagueId: { $in: leagueIds } });
+      leagueObjs = leagues.map(l => ({
+        _id: l._id,
+        name: l.name,
+        sport: l.sport,
+        region: l.region,
+        status: l.status,
+        teams: l.teams
+      }));
+      teamObjs = teams.map(t => ({
+        _id: t._id,
+        name: t.name,
+        leagueId: t.tournament,
+        sport: t.sport
+      }));
+      const leagueIdToName = {};
+      leagues.forEach(l => { leagueIdToName[l._id] = l.name; });
+      gameObjs = games.map(g => ({
+        _id: g._id,
+        gameName: g.gameName || g.sport,
+        leagueId: g.leagueId,
+        leagueName: leagueIdToName[g.leagueId],
+        teamAId: g.teamAId,
+        teamAName: g.teamAName,
+        teamBId: g.teamBId,
+        teamBName: g.teamBName,
+        scheduledDate: g.scheduledDate,
+        location: g.location,
+        status: g.status,
+        sport: g.sport,
+        tournamentId: g.tournamentId
+      }));
+    } else {
+      // Admin/Player: See all games of teams the user is a member/admin of
+      const user = await User.findOne({ username });
+      if (!user) return res.status(404).json({ error: 'User not found' });
+      if (Array.isArray(user.teams) && user.teams.length > 0) {
+        teams = await Team.find({ _id: { $in: user.teams } });
+      } else {
+        teams = await Team.find({ members: username });
+      }
+      const teamIds = teams.map(t => t._id);
+      games = await ScheduledGame.find({
+        $or: [
+          { teamAId: { $in: teamIds } },
+          { teamBId: { $in: teamIds } }
+        ]
+      });
+      // Find leagues for these teams
+      const leagueIds = [
+        ...new Set(
+          teams.flatMap(team => Array.isArray(team.tournament) ? team.tournament : [team.tournament])
+        )
+      ].filter(Boolean);
+      leagues = await Tournament.find({ _id: { $in: leagueIds } });
+      leagueObjs = leagues.map(l => ({
+        _id: l._id,
+        name: l.name,
+        sport: l.sport,
+        region: l.region,
+        status: l.status,
+        teams: l.teams
+      }));
+      teamObjs = teams.map(t => ({
+        _id: t._id,
+        name: t.name,
+        leagueId: t.tournament,
+        sport: t.sport
+      }));
+      const leagueIdToName = {};
+      leagues.forEach(l => { leagueIdToName[l._id] = l.name; });
+      gameObjs = games.map(g => ({
+        _id: g._id,
+        gameName: g.gameName || g.sport,
+        leagueId: g.leagueId,
+        leagueName: leagueIdToName[g.leagueId],
+        teamAId: g.teamAId,
+        teamAName: g.teamAName,
+        teamBId: g.teamBId,
+        teamBName: g.teamBName,
+        scheduledDate: g.scheduledDate,
+        location: g.location,
+        status: g.status,
+        sport: g.sport,
+        tournamentId: g.tournamentId
+      }));
+    }
     res.json({ leagues: leagueObjs, games: gameObjs, teams: teamObjs });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch leagues, games, and teams' });
@@ -487,15 +584,18 @@ app.get('/league/scheduled-games', async (req, res) => {
   if (!leagueId) return res.status(400).json({ error: 'Missing leagueId' });
   try {
     const games = await ScheduledGame.find({ leagueId });
-    // Fetch the league name from Tournament collection
-    const league = await Tournament.findOne({ name: leagueId });
+    // Fetch the league name from Leagues collection using _id
+    const league = await Leagues.findOne({ _id: leagueId });
     const leagueName = league ? league.name : leagueId;
     const result = games.map(g => ({
-      date: g.date,
-      teamA: g.teamA,
-      teamB: g.teamB,
       gameName: g.gameName,
-      leagueName: leagueName
+      leagueName: leagueName,
+      teamAName: g.teamAName,
+      teamBName: g.teamBName,
+      teamAId: g.teamAId,
+      teamBId: g.teamBId,
+      scheduledDate: g.scheduledDate,
+      location: g.location
     }));
     res.json({ games: result });
   } catch (err) {
@@ -585,6 +685,36 @@ app.get('/team/members', async (req, res) => {
     res.json({ members: team.members || [] });
   } catch (err) {
     res.status(500).json({ error: 'Failed to fetch team members' });
+  }
+});
+
+// Endpoint to fetch player details by username
+app.get('/player', async (req, res) => {
+  const { username } = req.query;
+  if (!username) return res.status(400).json({ error: 'Missing username' });
+  try {
+    // Find user by username
+    const user = await User.findOne({ username });
+    if (!user) return res.status(404).json({ error: 'Player not found' });
+    // Example: teamName and contactNumber could be stored in user or another collection
+    // Here, we assume they are in the user document
+    res.json({
+      username: user.username,
+      teamName: user.teamName || '',
+      contactNumber: user.contactNumber || ''
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch player details' });
+  }
+});
+
+// Endpoint to list all teams for registration
+app.get('/teams/list', async (req, res) => {
+  try {
+    const teams = await Teams.find({}, '_id name sport');
+    res.json({ teams });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch teams' });
   }
 });
 

@@ -72,8 +72,8 @@ class _GameHomeScreenState extends State<GameHomeScreen> with SingleTickerProvid
     }
     final location = widget.game['location'] ?? '';
     final leagueName = widget.game['leagueName'] ?? '';
-    final teamAId = widget.game['teamAId'] ?? '';
-    final teamBId = widget.game['teamBId'] ?? '';
+    final teamAId = widget.game['teamAId'] ?? widget.game['teamA'] ?? '';
+    final teamBId = widget.game['teamBId'] ?? widget.game['teamB'] ?? '';
     return ChangeNotifierProvider(
       create: (_) {
         final vm = GameHomeViewModel();
@@ -84,16 +84,14 @@ class _GameHomeScreenState extends State<GameHomeScreen> with SingleTickerProvid
         appBar: AppBar(
           title: const Text('Game Details'),
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Consumer<GameHomeViewModel>(
-            builder: (context, vm, _) {
-              if (vm.loading) {
-                return const Center(child: CircularProgressIndicator());
-              } else if (vm.error.isNotEmpty) {
-                return Center(child: Text(vm.error, style: const TextStyle(color: Colors.red)));
-              } else {
-                return Column(
+        body: Consumer<GameHomeViewModel>(
+          builder: (context, vm, _) {
+            if (vm.loading) {
+              return const Center(child: CircularProgressIndicator());
+            } else if (vm.error.isNotEmpty) {
+              return Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text('$teamA vs $teamB', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
@@ -105,27 +103,51 @@ class _GameHomeScreenState extends State<GameHomeScreen> with SingleTickerProvid
                     if (leagueName.isNotEmpty)
                       Text('League: $leagueName', style: const TextStyle(fontSize: 16)),
                     const SizedBox(height: 16),
-                    TabBar(
-                      controller: _tabController,
-                      tabs: [
-                        Tab(text: teamA.isNotEmpty ? teamA : 'Team A'),
-                        Tab(text: teamB.isNotEmpty ? teamB : 'Team B'),
+                    Text('Failed to fetch team members', style: const TextStyle(color: Colors.red)),
+                  ],
+                ),
+              );
+            } else {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('$teamA vs $teamB', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 8),
+                        if (formattedDate.isNotEmpty && formattedTime.isNotEmpty)
+                          Text('Date: $formattedDate at $formattedTime', style: const TextStyle(fontSize: 16)),
+                        if (location.isNotEmpty)
+                          Text('Location: $location', style: const TextStyle(fontSize: 16)),
+                        if (leagueName.isNotEmpty)
+                          Text('League: $leagueName', style: const TextStyle(fontSize: 16)),
+                        const SizedBox(height: 16),
                       ],
                     ),
-                    Expanded(
-                      child: TabBarView(
-                        controller: _tabController,
-                        children: [
-                          _TeamPlayersTab(players: vm.teamAPlayers, onTap: openProfileOrPlayer, scrollController: _teamAScrollController),
-                          _TeamPlayersTab(players: vm.teamBPlayers, onTap: openProfileOrPlayer, scrollController: _teamBScrollController),
-                        ],
-                      ),
+                  ),
+                  TabBar(
+                    controller: _tabController,
+                    tabs: [
+                      Tab(text: teamA.isNotEmpty ? teamA : 'Team A'),
+                      Tab(text: teamB.isNotEmpty ? teamB : 'Team B'),
+                    ],
+                  ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _TeamPlayersTab(players: vm.teamAPlayers, onTap: openProfileOrPlayer, scrollController: _teamAScrollController),
+                        _TeamPlayersTab(players: vm.teamBPlayers, onTap: openProfileOrPlayer, scrollController: _teamBScrollController),
+                      ],
                     ),
-                  ],
-                );
-              }
-            },
-          ),
+                  ),
+                ],
+              );
+            }
+          },
         ),
       ),
     );

@@ -1,16 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'app_drawer.dart';
-import 'match_schedule_screen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
 import 'widgets/GameCard.dart';
-import 'widgets/LeagueCard.dart';
 import 'leagues_util.dart';
+import 'league_home_screen.dart';
+import 'team_home_screen.dart';
 
 class HomeTabbedScreen extends StatefulWidget {
   final String username;
+  final String role;
 
-  const HomeTabbedScreen({super.key, required this.username});
+  const HomeTabbedScreen({super.key, required this.username, required this.role});
 
   @override
   State<HomeTabbedScreen> createState() => _HomeTabbedScreenState();
@@ -27,25 +28,13 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
     _tabController = TabController(length: 3, vsync: this);
     viewModel = HomeTabbedViewModel();
     // Fetch all tab data once after login
-    viewModel.fetchAllTabData(widget.username);
+    viewModel.fetchAllTabData(widget.username, widget.role);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  void openLeagueSchedule(String leagueId) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => MatchScheduleScreen(
-          leagueName: leagueId,
-          scheduledGames: viewModel.scheduledGames,
-        ),
-      ),
-    );
   }
 
   @override
@@ -66,7 +55,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                 ],
               ),
             ),
-            drawer: const AppDrawer(),
+            drawer: AppDrawer(role: widget.role),
             body: vm.loading
                 ? const Center(child: CircularProgressIndicator())
                 : vm.error.isNotEmpty
@@ -81,12 +70,18 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                     children: [
                       // My Games Tab
                       (() {
-                        final sortedGames = List<Map<String, dynamic>>.from(vm.scheduledGames);
+                        final sortedGames = List<Map<String, dynamic>>.from(
+                          vm.scheduledGames,
+                        );
                         sortedGames.sort((a, b) {
                           final aDateStr = a['scheduledDate']?.toString() ?? '';
                           final bDateStr = b['scheduledDate']?.toString() ?? '';
-                          DateTime? aDate = aDateStr.isNotEmpty ? DateTime.tryParse(aDateStr) : null;
-                          DateTime? bDate = bDateStr.isNotEmpty ? DateTime.tryParse(bDateStr) : null;
+                          DateTime? aDate = aDateStr.isNotEmpty
+                              ? DateTime.tryParse(aDateStr)
+                              : null;
+                          DateTime? bDate = bDateStr.isNotEmpty
+                              ? DateTime.tryParse(bDateStr)
+                              : null;
                           if (aDate == null && bDate == null) return 0;
                           if (aDate == null) return 1;
                           if (bDate == null) return -1;
@@ -95,35 +90,52 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                         final now = DateTime.now();
                         final today = DateTime(now.year, now.month, now.day);
                         final upcomingGames = sortedGames.where((game) {
-                          final dateStr = game['scheduledDate']?.toString() ?? '';
+                          final dateStr =
+                              game['scheduledDate']?.toString() ?? '';
                           if (dateStr.isEmpty) return false;
-                          final gameDate = DateTime.tryParse(dateStr)?.toLocal();
+                          final gameDate = DateTime.tryParse(
+                            dateStr,
+                          )?.toLocal();
                           if (gameDate == null) return false;
-                          final gameDay = DateTime(gameDate.year, gameDate.month, gameDate.day);
+                          final gameDay = DateTime(
+                            gameDate.year,
+                            gameDate.month,
+                            gameDate.day,
+                          );
                           return !gameDay.isBefore(today);
                         }).toList();
                         return upcomingGames.isEmpty
-                            ? const Center(child: Text('No scheduled games found'))
+                            ? const Center(
+                                child: Text('No scheduled games found'),
+                              )
                             : ListView.builder(
                                 itemCount: upcomingGames.length,
                                 itemBuilder: (context, index) {
                                   final game = upcomingGames[index];
-                                  final dateStr = game['scheduledDate']?.toString() ?? '';
+                                  final dateStr =
+                                      game['scheduledDate']?.toString() ?? '';
                                   String formattedDate = '';
                                   if (dateStr.isNotEmpty) {
                                     try {
-                                      final date = DateTime.parse(dateStr).toLocal();
+                                      final date = DateTime.parse(
+                                        dateStr,
+                                      ).toLocal();
                                       final month = monthName(date.month);
                                       final time = formatTime(date);
-                                      formattedDate = '$month ${date.day.toString().padLeft(2, '0')}, ${date.year} at $time';
+                                      formattedDate =
+                                          '$month ${date.day.toString().padLeft(2, '0')}, ${date.year} at $time';
                                     } catch (_) {}
                                   }
                                   return Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       if (formattedDate.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 16,
+                                            vertical: 8,
+                                          ),
                                           child: Text(
                                             formattedDate,
                                             style: const TextStyle(
@@ -145,10 +157,20 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               itemCount: vm.leagues.length,
                               itemBuilder: (context, index) {
                                 final league = vm.leagues[index];
-                                print('LeagueCard league: ${league.toJson()}');
-                                return LeagueCard(
-                                  league: league,
-                                  onTap: () => openLeagueSchedule(league.id),
+                                return Card(
+                                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                  child: ListTile(
+                                    title: Text(league.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => LeagueHomeScreen(league: league),
+                                        ),
+                                      );
+                                    },
+                                  ),
                                 );
                               },
                             ),
@@ -159,17 +181,38 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               itemCount: vm.teams.length,
                               itemBuilder: (context, index) {
                                 final team = vm.teams[index];
-                                // If you have a TeamCard widget, use it here. Otherwise, use a simple Card.
+                                // Find leagues for this team
+                                final teamLeagues = vm.leagues.where((league) {
+                                  if (league.id != null && team['leagueId'] != null) {
+                                    if (team['leagueId'] is List) {
+                                      return team['leagueId'].contains(league.id);
+                                    } else {
+                                      return team['leagueId'] == league.id;
+                                    }
+                                  }
+                                  return false;
+                                }).toList();
+                                // Find scheduled games for this team
+                                final teamGames = vm.scheduledGames.where((game) =>
+                                  game['teamAId'] == team['_id'] || game['teamBId'] == team['_id']
+                                ).toList();
                                 return Card(
-                                  margin: const EdgeInsets.symmetric(
-                                    horizontal: 16,
-                                    vertical: 8,
-                                  ),
+                                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                   child: ListTile(
-                                    title: Text(team['name'] ?? 'Team'),
-                                    subtitle: Text(
-                                      'Sport: ${team['sport'] ?? ''}',
-                                    ),
+                                    title: Text(team['name'] ?? 'Team', style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) => TeamHomeScreen(
+                                            team: team,
+                                            leagues: teamLeagues,
+                                            scheduledGames: teamGames,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 );
                               },

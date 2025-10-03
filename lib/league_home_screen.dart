@@ -35,7 +35,7 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with SingleTickerPr
       itemCount: vm.scheduledGames.length,
       itemBuilder: (context, index) {
         final game = vm.scheduledGames[index];
-        return GameCard(game: game);
+        return GameCard(game: game, variant: GameCardVariant.scheduled);
       },
     );
   }

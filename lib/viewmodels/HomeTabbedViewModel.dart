@@ -12,14 +12,16 @@ class HomeTabbedViewModel extends ChangeNotifier {
   bool loading = false;
   String error = '';
 
-  Future<void> fetchAllTabData(String username) async {
+  Future<void> fetchAllTabData(String username, String role) async {
     loading = true;
     error = '';
     notifyListeners();
     try {
-      final res = await http.get(
-        Uri.parse('http://192.168.1.134:3000/user/leagues-games-teams?username=$username'),
-      );
+      String url = 'http://192.168.1.134:3000/user/leagues-games-teams?username=$username';
+      if (role.isNotEmpty) {
+        url += "&role=$role";
+      }
+      final res = await http.get(Uri.parse(url));
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
         // Scheduled Games
@@ -31,6 +33,7 @@ class HomeTabbedViewModel extends ChangeNotifier {
         myLeagues = leagues.map((l) => l.name).toList();
         // Teams
         teams = data['teams'] ?? [];
+        role = data['role']?.toString() ?? role;
       } else {
         error = json.decode(res.body)['error'] ?? 'Failed to fetch tab data';
       }

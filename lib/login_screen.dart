@@ -9,7 +9,7 @@ const String apiBaseUrl = 'http://192.168.1.134:3000'; // Replace with your actu
 
 class User {
   final String username;
-  final String role; // 'player', 'admin', 'super_admin'
+  final String role; // 'player', 'admin', 'super_admin' , 'god_admin'
 
   User({required this.username, required this.role});
 }
@@ -57,12 +57,11 @@ class _LoginScreenState extends State<LoginScreen> {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'username': username, 'password': password}),
       );
-      print('Login response status: ${response.statusCode}');
-      print('Login response body: ${response.body}');
       setState(() { _isLoading = false; });
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final token = data['token'];
+        final role = data['role']?.toString() ?? '';
         if (_rememberMe) {
           await _secureStorage.write(key: 'saved_username', value: username);
           await _secureStorage.write(key: 'saved_password', value: password);
@@ -70,8 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save token and username for profile screen
         await _secureStorage.write(key: 'auth_token', value: token);
         await _secureStorage.write(key: 'auth_username', value: username);
-        // Navigate to HomeTabbedScreen after login
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeTabbedScreen(username: username)));
+        // Navigate to HomeTabbedScreen after login, passing role
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeTabbedScreen(username: username, role: role)));
       } else {
         print('Login error: ${response.body}');
         setState(() { _errorMessage = json.decode(response.body)['error'] ?? 'Login failed'; });
