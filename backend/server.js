@@ -709,4 +709,20 @@ app.post('/user/assign-role', async (req, res) => {
   }
 });
 
+// Endpoint: get results for completed games
+app.get('/games/results', async (req, res) => {
+  try {
+    const { leagueId } = req.query;
+    let query = { status: 'completed' };
+    if (leagueId) {
+      query.leagueId = leagueId;
+    }
+    const games = await ScheduledGame.find(query);
+    res.json({ results: games });
+  } catch (err) {
+    console.error('Error fetching game results:', err);
+    res.status(500).json({ error: 'Failed to fetch game results' });
+  }
+});
+
 app.listen(3000, '0.0.0.0', () => console.log('Backend running on http://0.0.0.0:3000'));

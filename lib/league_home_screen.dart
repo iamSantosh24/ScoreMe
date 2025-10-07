@@ -3,6 +3,7 @@ import 'leagues_util.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/LeagueHomeViewModel.dart';
 import 'widgets/GameCard.dart';
+import 'match_results_screen.dart';
 
 class LeagueHomeScreen extends StatefulWidget {
   final League league;
@@ -61,7 +62,7 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with SingleTickerPr
             body: TabBarView(
               controller: _tabController,
               children: [
-                Center(child: Text('Results for ${widget.league.name}')), // Placeholder
+                MatchResultsScreen(league: widget.league.id),
                 buildScheduledTab(),
               ],
             ),
