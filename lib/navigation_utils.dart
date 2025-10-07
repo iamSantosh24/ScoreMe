@@ -4,6 +4,7 @@ import 'player_utils.dart';
 import 'dart:math';
 
 void openTossScreen(BuildContext context, {
+  required String sportType,
   required String team1,
   required String team2,
   required String matchTitle,
@@ -11,6 +12,19 @@ void openTossScreen(BuildContext context, {
 }) {
   String? tossWinner;
   String? tossChoice;
+
+  // Set toss choices based on sportType
+  List<String> tossChoices;
+  switch (sportType) {
+    case 'Cricket':
+      tossChoices = ['Batting', 'Bowling'];
+      break;
+    case 'Throwball':
+      tossChoices = ['Serve', 'Court'];
+      break;
+    default:
+      tossChoices = ['Option 1', 'Option 2'];
+  }
 
   showDialog(
     context: context,
@@ -49,46 +63,31 @@ void openTossScreen(BuildContext context, {
                     style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Toss Details',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
                   DropdownButton<String>(
                     hint: const Text('Select Toss Winner'),
                     value: tossWinner,
                     isExpanded: true,
-                    items: [
-                      DropdownMenuItem<String>(
-                        value: team1,
-                        child: Text(team1),
-                      ),
-                      DropdownMenuItem<String>(
-                        value: team2,
-                        child: Text(team2),
-                      ),
-                    ],
+                    items: [team1, team2].map((team) {
+                      return DropdownMenuItem<String>(
+                        value: team,
+                        child: Text(team),
+                      );
+                    }).toList(),
                     onChanged: (value) => setState(() => tossWinner = value),
                   ),
-                  const SizedBox(height: 12),
-                  if (tossWinner != null) ...[
-                    const Text(
-                      'Toss Choice',
-                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-                    ),
-                    RadioListTile<String>(
-                      title: const Text('Batting'),
-                      value: 'Batting',
-                      groupValue: tossChoice,
-                      onChanged: (value) => setState(() => tossChoice = value),
-                    ),
-                    RadioListTile<String>(
-                      title: const Text('Bowling'),
-                      value: 'Bowling',
-                      groupValue: tossChoice,
-                      onChanged: (value) => setState(() => tossChoice = value),
-                    ),
-                  ],
+                  const SizedBox(height: 16),
+                  DropdownButton<String>(
+                    hint: const Text('Select Toss Choice'),
+                    value: tossChoice,
+                    isExpanded: true,
+                    items: tossChoices.map((choice) {
+                      return DropdownMenuItem<String>(
+                        value: choice,
+                        child: Text(choice),
+                      );
+                    }).toList(),
+                    onChanged: (value) => setState(() => tossChoice = value),
+                  ),
                 ],
               ),
             ),
@@ -99,7 +98,7 @@ void openTossScreen(BuildContext context, {
               ),
               ElevatedButton(
                 onPressed: proceedToPlayerSelection,
-                child: const Text('Next'),
+                child: const Text('Proceed'),
               ),
             ],
           );

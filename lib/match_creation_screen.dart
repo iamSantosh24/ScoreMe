@@ -15,6 +15,7 @@ class MatchCreationScreen extends StatefulWidget {
 class _MatchCreationScreenState extends State<MatchCreationScreen> {
   String? team1;
   String? team2;
+  String sportType = 'Cricket'; // Default sport type
   final TextEditingController _matchTitleController = TextEditingController();
 
   void _createMatch() {
@@ -41,6 +42,7 @@ class _MatchCreationScreenState extends State<MatchCreationScreen> {
 
     openTossScreen(
       context,
+      sportType: sportType,
       team1: team1!,
       team2: team2!,
       matchTitle: _matchTitleController.text,
@@ -57,7 +59,6 @@ class _MatchCreationScreenState extends State<MatchCreationScreen> {
   @override
   Widget build(BuildContext context) {
     final List<String> teams = leagueTeams[widget.league] ?? [];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Create Match'),
@@ -80,6 +81,19 @@ class _MatchCreationScreenState extends State<MatchCreationScreen> {
                   labelText: 'Match Title',
                   border: OutlineInputBorder(),
                 ),
+              ),
+              const SizedBox(height: 20),
+              DropdownButton<String>(
+                hint: const Text('Select Sport Type'),
+                value: sportType,
+                isExpanded: true,
+                items: ['Cricket', 'Throwball'].map((String sport) {
+                  return DropdownMenuItem<String>(
+                    value: sport,
+                    child: Text(sport),
+                  );
+                }).toList(),
+                onChanged: (value) => setState(() => sportType = value!),
               ),
               const SizedBox(height: 20),
               DropdownButton<String>(

@@ -4,6 +4,8 @@ import 'package:scorer/widgets/GameCard.dart';
 import 'cricket_live_score.dart';
 import 'throwball_live_score.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
+import 'viewmodels/GameHomeViewModel.dart';
+import 'navigation_utils.dart';
 
 class LiveScoreScreen extends StatefulWidget {
   final String sportType;
@@ -178,13 +180,45 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
   }
 
   Widget _getSportWidget(String sportType, Map<String, dynamic> gameData) {
-    switch (sportType) {
-      case 'Cricket':
-        return CricketLiveScore(gameData: gameData);
-      case 'Throwball':
-        return ThrowballLiveScore(gameData: gameData);
-      default:
-        return Center(child: Text('Unsupported sport type'));
+    if (sportType == 'Cricket') {
+      final team1 = gameData['teamAName'] ?? 'Team A';
+      final team2 = gameData['teamBName'] ?? 'Team B';
+      final matchTitle = gameData['matchTitle'] ?? '${team1} vs ${team2}';
+      final teamAId = gameData['teamAId'] ?? gameData['teamA'] ?? '';
+      final teamBId = gameData['teamBId'] ?? gameData['teamB'] ?? '';
+      return FutureBuilder<void>(
+        future: _fetchAndOpenTossScreen(context, team1, team2, matchTitle, teamAId, teamBId),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Failed to fetch team members'));
+          } else {
+            return Container(); // Toss dialog will be shown
+          }
+        },
+      );
+    } else if (sportType == 'Throwball') {
+      return ThrowballLiveScore(gameData: gameData);
+    } else {
+      return Center(child: Text('Unsupported sport type'));
     }
+  }
+
+  Future<void> _fetchAndOpenTossScreen(BuildContext context, String team1, String team2, String matchTitle, String teamAId, String teamBId) async {
+    final vm = GameHomeViewModel();
+    await vm.fetchTeamMembers(teamAId, teamBId);
+    if (vm.error.isNotEmpty) throw Exception(vm.error);
+    final teamPlayers = <String, List<String>>{
+      team1: vm.teamAPlayers,
+      team2: vm.teamBPlayers,
+    };
+    openTossScreen(context,
+      sportType: widget.sportType,
+      team1: team1,
+      team2: team2,
+      matchTitle: matchTitle,
+      teamPlayers: teamPlayers,
+    );
   }
 }

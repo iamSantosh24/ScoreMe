@@ -1233,106 +1233,108 @@ class _ScoreboardScreenState extends State<ScoreboardScreen> {
               child: TabBarView(
                 children: [
                   // Live Scoring Tab
-                  Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Column(
-                          children: [
-                            // Display current over ball-by-ball result
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: 8.0),
-                              child: Text(
-                                'This Over: ${_currentOverResults.isEmpty ? '-' : _currentOverResults.join(" ")}',
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: List.generate(
-                                5,
-                                (index) => Expanded(
-                                  child: TextButton(
-                                    onPressed: () => _runCounter(index),
-                                    child: Text('$index'),
+                  SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.all(16.0),
+                          child: Column(
+                            children: [
+                              // Display current over ball-by-ball result
+                              Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: Text(
+                                  'This Over: ${_currentOverResults.isEmpty ? '-' : _currentOverResults.join(" ")}',
+                                  style: const TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 8.0),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () => _runCounter(5),
-                                    child: const Text('5'),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () => _runCounter(6),
-                                    child: const Text('6'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8.0),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: _openWickets,
-                                    child: const Text('Wicket'),
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 8.0),
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () =>
-                                        _openNonLegitimateExtras('Wide', 'wd'),
-                                    child: const Text('Wide'),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () => _openNonLegitimateExtras(
-                                      'No ball',
-                                      'nb',
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: List.generate(
+                                  5,
+                                  (index) => Expanded(
+                                    child: TextButton(
+                                      onPressed: () => _runCounter(index),
+                                      child: Text('$index'),
                                     ),
-                                    child: const Text('No Ball'),
                                   ),
                                 ),
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () =>
-                                        _openLegitimateExtras('Leg Bye', 'lb'),
-                                    child: const Text('Leg Bye'),
+                              ),
+                              const SizedBox(height: 8.0),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () => _runCounter(5),
+                                      child: const Text('5'),
+                                    ),
                                   ),
-                                ),
-                                Expanded(
-                                  child: TextButton(
-                                    onPressed: () =>
-                                        _openLegitimateExtras('Bye', 'b'),
-                                    child: const Text('Bye'),
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () => _runCounter(6),
+                                      child: const Text('6'),
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                ],
+                              ),
+                              const SizedBox(height: 8.0),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: _openWickets,
+                                      child: const Text('Wicket'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 8.0),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () =>
+                                          _openNonLegitimateExtras('Wide', 'wd'),
+                                      child: const Text('Wide'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () => _openNonLegitimateExtras(
+                                        'No ball',
+                                        'nb',
+                                      ),
+                                      child: const Text('No Ball'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () =>
+                                          _openLegitimateExtras('Leg Bye', 'lb'),
+                                      child: const Text('Leg Bye'),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: TextButton(
+                                      onPressed: () =>
+                                          _openLegitimateExtras('Bye', 'b'),
+                                      child: const Text('Bye'),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   // Squads Tab
                   SingleChildScrollView(
