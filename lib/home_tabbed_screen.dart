@@ -151,9 +151,11 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                                   return false;
                                 }).toList();
                                 // Find scheduled games for this team
-                                final teamGames = vm.scheduledGames.where((game) =>
+                                final teamGames = viewModel.upcomingScheduledGames.where((game) =>
                                   game['teamAId'] == team['_id'] || game['teamBId'] == team['_id']
                                 ).toList();
+                                print('Upcoming Games: ${viewModel.upcomingScheduledGames}');
+                                print('TeamGames: $teamGames');
                                 return Card(
                                   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                   child: ListTile(
