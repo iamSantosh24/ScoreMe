@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'scoreboard_screen.dart';
+import 'cricket_live_score.dart';
 import 'player_utils.dart';
 import 'dart:math';
 
@@ -135,7 +135,7 @@ void _showPlayerSelectionDialog(BuildContext context, {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ScoreboardScreen(
+                  builder: (context) => CricketLiveScore(
                     team1: team1,
                     team2: team2,
                     tossWinner: tossWinner,

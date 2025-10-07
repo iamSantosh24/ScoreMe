@@ -221,16 +221,31 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
       matchTitle: matchTitle,
       teamPlayers: teamPlayers,
       onTossComplete: (tossWinner, tossChoice) {
-        // Merge tossWinner, tossChoice, teamPlayers into gameData
         final updatedGameData = Map<String, dynamic>.from(gameData ?? widget.gameData)
           ..['tossWinner'] = tossWinner
           ..['tossChoice'] = tossChoice
           ..['teamPlayers'] = teamPlayers;
         if ((sportType ?? widget.sportType) == 'Cricket') {
+          // Extract required parameters for ScoreboardScreen
+          final team1Players = teamPlayers[team1] ?? [];
+          final team2Players = teamPlayers[team2] ?? [];
+          final team1Captain = team1Players.isNotEmpty ? team1Players.first : '';
+          final team1Wicketkeeper = team1Players.length > 1 ? team1Players[1] : '';
+          final team2Captain = team2Players.isNotEmpty ? team2Players.first : '';
+          final team2Wicketkeeper = team2Players.length > 1 ? team2Players[1] : '';
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (_) => CricketLiveScore(
-                gameData: updatedGameData,
+                team1: team1,
+                team2: team2,
+                tossWinner: tossWinner,
+                tossChoice: tossChoice,
+                team1Players: team1Players,
+                team2Players: team2Players,
+                team1Captain: team1Captain,
+                team1Wicketkeeper: team1Wicketkeeper,
+                team2Captain: team2Captain,
+                team2Wicketkeeper: team2Wicketkeeper,
               ),
             ),
           );
