@@ -61,7 +61,7 @@ class _MatchScreenState extends State<MatchScreen> with SingleTickerProviderStat
                 // Results tab
                 MatchResultsScreen(league: widget.league),
                 // Scheduled tab
-                MatchScheduleScreen(league: widget.league),
+                MatchScheduleScreen(leagueId: widget.league),
                 // Create a Match tab
                 MatchCreationScreen(league: widget.league),
               ],

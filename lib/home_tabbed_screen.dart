@@ -28,7 +28,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
     _tabController = TabController(length: 3, vsync: this);
     viewModel = HomeTabbedViewModel();
     // Fetch all tab data once after login
-    viewModel.fetchAllTabData(widget.username, widget.role);
+    viewModel.fetchAllTabData(widget.username);
   }
 
   @override
