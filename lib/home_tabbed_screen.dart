@@ -55,7 +55,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                 ],
               ),
             ),
-            drawer: AppDrawer(role: widget.role),
+            drawer: AppDrawer(role: widget.role, username: widget.username),
             body: vm.loading
                 ? const Center(child: CircularProgressIndicator())
                 : vm.error.isNotEmpty
@@ -111,7 +111,6 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               itemCount: vm.leagues.length,
                               itemBuilder: (context, index) {
                                 final league = vm.leagues[index];
-                                final leagueGames = vm.upcomingScheduledGames.where((game) => game['leagueId'] == league.id).toList();
                                 return Card(
                                   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                   child: ListTile(
