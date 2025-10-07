@@ -6,7 +6,8 @@ import 'widgets/GameCard.dart';
 
 class LeagueHomeScreen extends StatefulWidget {
   final League league;
-  const LeagueHomeScreen({super.key, required this.league});
+  final List<dynamic> scheduledGames;
+  const LeagueHomeScreen({super.key, required this.league, required this.scheduledGames});
 
   @override
   State<LeagueHomeScreen> createState() => _LeagueHomeScreenState();
@@ -21,20 +22,14 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with SingleTickerPr
     _tabController = TabController(length: 2, vsync: this);
   }
 
-  Widget buildScheduledTab(LeagueHomeViewModel vm) {
-    if (vm.loadingScheduled) {
-      return const Center(child: CircularProgressIndicator());
-    }
-    if (vm.errorScheduled.isNotEmpty) {
-      return Center(child: Text(vm.errorScheduled, style: const TextStyle(color: Colors.red)));
-    }
-    if (vm.scheduledGames.isEmpty) {
+  Widget buildScheduledTab() {
+    if (widget.scheduledGames.isEmpty) {
       return const Center(child: Text('No scheduled games found'));
     }
     return ListView.builder(
-      itemCount: vm.scheduledGames.length,
+      itemCount: widget.scheduledGames.length,
       itemBuilder: (context, index) {
-        final game = vm.scheduledGames[index];
+        final game = widget.scheduledGames[index];
         return GameCard(game: game, variant: GameCardVariant.scheduled);
       },
     );
@@ -67,7 +62,7 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with SingleTickerPr
               controller: _tabController,
               children: [
                 Center(child: Text('Results for ${widget.league.name}')), // Placeholder
-                buildScheduledTab(vm),
+                buildScheduledTab(),
               ],
             ),
           );

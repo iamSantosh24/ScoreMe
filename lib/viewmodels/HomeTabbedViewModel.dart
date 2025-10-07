@@ -39,4 +39,7 @@ class HomeTabbedViewModel extends ChangeNotifier {
     loading = false;
     notifyListeners();
   }
+
+  List<Map<String, dynamic>> get upcomingScheduledGames =>
+      filterAndSortUpcomingGames(List<Map<String, dynamic>>.from(scheduledGames));
 }

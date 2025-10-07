@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/MatchScheduleViewModel.dart';
+import 'viewmodels/HomeTabbedViewModel.dart';
 import 'leagues_util.dart';
 import 'widgets/GameCard.dart';
 
@@ -49,15 +50,19 @@ class _MatchScheduleScreenState extends State<MatchScheduleScreen> {
                 ? const Center(child: CircularProgressIndicator())
                 : vm.error.isNotEmpty
                 ? Center(child: Text(vm.error, style: const TextStyle(color: Colors.red)))
-                : vm.scheduledGames.isEmpty
-                ? const Center(child: Text('No scheduled games found for this league'))
-                : ListView.builder(
-                    itemCount: vm.scheduledGames.length,
-                    itemBuilder: (context, index) {
-                      final game = vm.scheduledGames[index];
-                      return GameCard(game: game, variant: GameCardVariant.scheduled);
-                    },
-                  ),
+                : (() {
+                    // Use upcomingScheduledGames from HomeTabbedViewModel if available
+                    final upcomingGames = Provider.of<HomeTabbedViewModel>(context, listen: false).upcomingScheduledGames;
+                    return upcomingGames.isEmpty
+                        ? const Center(child: Text('No scheduled games for today or future dates'))
+                        : ListView.builder(
+                            itemCount: upcomingGames.length,
+                            itemBuilder: (context, index) {
+                              final game = upcomingGames[index];
+                              return GameCard(game: game, variant: GameCardVariant.scheduled);
+                            },
+                          );
+                  })(),
           );
         },
       ),

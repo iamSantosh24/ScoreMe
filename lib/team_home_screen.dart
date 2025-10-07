@@ -3,6 +3,7 @@ import 'leagues_util.dart';
 import 'widgets/GameCard.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/TeamHomeViewModel.dart';
+import 'viewmodels/HomeTabbedViewModel.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
@@ -91,15 +92,20 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with SingleTickerProvid
                       },
                     ),
                     // Schedule Tab
-                    widget.scheduledGames.isEmpty
-                        ? const Center(child: Text('No scheduled games found'))
-                        : ListView.builder(
-                            itemCount: widget.scheduledGames.length,
-                            itemBuilder: (context, idx) {
-                              final game = widget.scheduledGames[idx];
-                              return GameCard(game: game, variant: GameCardVariant.scheduled);
-                            },
-                          ),
+                    Consumer<HomeTabbedViewModel>(
+                      builder: (context, vm, _) {
+                        final filteredGames = vm.upcomingScheduledGames;
+                        return filteredGames.isEmpty
+                            ? const Center(child: Text('No scheduled games found'))
+                            : ListView.builder(
+                                itemCount: filteredGames.length,
+                                itemBuilder: (context, idx) {
+                                  final game = filteredGames[idx];
+                                  return GameCard(game: game, variant: GameCardVariant.scheduled);
+                                },
+                              );
+                      },
+                    ),
                   ],
                 ),
               ),

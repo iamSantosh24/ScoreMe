@@ -70,78 +70,32 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                     children: [
                       // My Games Tab
                       (() {
-                        final sortedGames = List<Map<String, dynamic>>.from(
-                          vm.scheduledGames,
-                        );
-                        sortedGames.sort((a, b) {
-                          final aDateStr = a['scheduledDate']?.toString() ?? '';
-                          final bDateStr = b['scheduledDate']?.toString() ?? '';
-                          DateTime? aDate = aDateStr.isNotEmpty
-                              ? DateTime.tryParse(aDateStr)
-                              : null;
-                          DateTime? bDate = bDateStr.isNotEmpty
-                              ? DateTime.tryParse(bDateStr)
-                              : null;
-                          if (aDate == null && bDate == null) return 0;
-                          if (aDate == null) return 1;
-                          if (bDate == null) return -1;
-                          return aDate.compareTo(bDate);
-                        });
-                        final now = DateTime.now();
-                        final today = DateTime(now.year, now.month, now.day);
-                        final upcomingGames = sortedGames.where((game) {
-                          final dateStr =
-                              game['scheduledDate']?.toString() ?? '';
-                          if (dateStr.isEmpty) return false;
-                          final gameDate = DateTime.tryParse(
-                            dateStr,
-                          )?.toLocal();
-                          if (gameDate == null) return false;
-                          final gameDay = DateTime(
-                            gameDate.year,
-                            gameDate.month,
-                            gameDate.day,
-                          );
-                          return !gameDay.isBefore(today);
-                        }).toList();
+                        final upcomingGames = vm.upcomingScheduledGames;
                         return upcomingGames.isEmpty
-                            ? const Center(
-                                child: Text('No scheduled games found'),
-                              )
+                            ? const Center(child: Text('No scheduled games found'))
                             : ListView.builder(
                                 itemCount: upcomingGames.length,
                                 itemBuilder: (context, index) {
                                   final game = upcomingGames[index];
-                                  final dateStr =
-                                      game['scheduledDate']?.toString() ?? '';
+                                  final dateStr = game['scheduledDate']?.toString() ?? '';
                                   String formattedDate = '';
                                   if (dateStr.isNotEmpty) {
                                     try {
-                                      final date = DateTime.parse(
-                                        dateStr,
-                                      ).toLocal();
+                                      final date = DateTime.parse(dateStr).toLocal();
                                       final month = monthName(date.month);
                                       final time = formatTime(date);
-                                      formattedDate =
-                                          '$month ${date.day.toString().padLeft(2, '0')}, ${date.year} at $time';
+                                      formattedDate = '$month ${date.day.toString().padLeft(2, '0')}, ${date.year} at $time';
                                     } catch (_) {}
                                   }
                                   return Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       if (formattedDate.isNotEmpty)
                                         Padding(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 16,
-                                            vertical: 8,
-                                          ),
+                                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                           child: Text(
                                             formattedDate,
-                                            style: const TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       GameCard(game: game),
@@ -157,6 +111,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               itemCount: vm.leagues.length,
                               itemBuilder: (context, index) {
                                 final league = vm.leagues[index];
+                                final leagueGames = vm.upcomingScheduledGames.where((game) => game['leagueId'] == league.id).toList();
                                 return Card(
                                   margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                                   child: ListTile(
@@ -166,7 +121,10 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (_) => LeagueHomeScreen(league: league),
+                                          builder: (_) => LeagueHomeScreen(
+                                            league: league,
+                                            scheduledGames: viewModel.upcomingScheduledGames,
+                                          ),
                                         ),
                                       );
                                     },
