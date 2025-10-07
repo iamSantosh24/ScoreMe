@@ -18,7 +18,6 @@ class LiveScoreScreen extends StatefulWidget {
 }
 
 class _LiveScoreScreenState extends State<LiveScoreScreen> {
-  String? selectedSportType;
   dynamic selectedLeague;
   String? selectedGame;
   List<dynamic> availableLeagues = [];
@@ -74,7 +73,6 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
     }
     await viewModel.fetchAllTabData(widget.username);
     List<dynamic> allGames = viewModel.upcomingScheduledGames;
-    print('All Games: $allGames');
     List<dynamic> filteredGames = [];
     if (widget.role == 'god_admin' || widget.role == 'super_admin') {
       filteredGames = allGames.where((g) => (g['leagueId'] == selectedLeague.id || g['leagueId'] == selectedLeague['id'])).toList();
@@ -155,19 +153,20 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
                             final game = availableGames[index];
                             return Padding(
                               padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: GameCard(game: game),
+                              child: GameCard(
+                                game: game,
+                                onTap: () {
+                                  final sportType = game['sport'] ?? game['sportType'] ?? '';
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) => _getSportWidget(sportType, game),
+                                    ),
+                                  );
+                                },
+                              ),
                             );
                           },
                         ),
-                  ],
-                  if (selectedLeague != null && selectedSportType != null) ...[
-                    SizedBox(height: 24),
-                    Expanded(child: _getSportWidget(selectedSportType!, {
-                      'league': selectedLeague.name ?? selectedLeague['name'] ?? selectedLeague.toString(),
-                      'gameName': selectedGame,
-                      'teamAName': selectedGame, // For demo
-                      'teamBName': '', // For demo
-                    })),
                   ],
                 ],
               ),

@@ -7,8 +7,9 @@ enum GameCardVariant { defaultView, scheduled }
 class GameCard extends StatelessWidget {
   final Map<String, dynamic> game;
   final GameCardVariant variant;
+  final VoidCallback? onTap;
 
-  const GameCard({super.key, required this.game, this.variant = GameCardVariant.defaultView});
+  const GameCard({super.key, required this.game, this.variant = GameCardVariant.defaultView, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +40,7 @@ class GameCard extends StatelessWidget {
           title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: subtitleText.isNotEmpty ? Text(subtitleText) : null,
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: () {
+          onTap: onTap ?? () {
             Navigator.push(
               context,
               MaterialPageRoute(
@@ -71,7 +72,7 @@ class GameCard extends StatelessWidget {
           title: Text(titleText, style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: subtitleText.isNotEmpty ? Text(subtitleText) : null,
           trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-          onTap: () {
+          onTap: onTap ?? () {
             Navigator.push(
               context,
               MaterialPageRoute(
