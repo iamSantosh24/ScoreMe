@@ -18,40 +18,42 @@ class _ThrowballLiveScoreState extends State<ThrowballLiveScore> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text('Team A: ${widget.gameData['teamAName'] ?? 'A'}'),
-        Row(
-          children: [
-            _scoreBox('Sets Won', teamASets, () => setState(() => teamASets++)),
-            _scoreBox('Timeouts', teamATimeouts, () => setState(() => teamATimeouts++)),
-          ],
-        ),
-        SizedBox(height: 8),
-        Text('Points per Set'),
-        Row(
-          children: List.generate(3, (i) => _scoreBox('Set ${i+1}', teamAPoints[i], () => setState(() => teamAPoints[i]++))),
-        ),
-        SizedBox(height: 16),
-        Text('Team B: ${widget.gameData['teamBName'] ?? 'B'}'),
-        Row(
-          children: [
-            _scoreBox('Sets Won', teamBSets, () => setState(() => teamBSets++)),
-            _scoreBox('Timeouts', teamBTimeouts, () => setState(() => teamBTimeouts++)),
-          ],
-        ),
-        SizedBox(height: 8),
-        Text('Points per Set'),
-        Row(
-          children: List.generate(3, (i) => _scoreBox('Set ${i+1}', teamBPoints[i], () => setState(() => teamBPoints[i]++))),
-        ),
-        Spacer(),
-        ElevatedButton(
-          onPressed: _submitThrowballScore,
-          child: Text('Submit Score'),
-        ),
-      ],
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('Team A: ${widget.gameData['teamAName'] ?? 'A'}'),
+          Row(
+            children: [
+              Expanded(child: _scoreBox('Sets Won', teamASets, () => setState(() => teamASets++))),
+              Expanded(child: _scoreBox('Timeouts', teamATimeouts, () => setState(() => teamATimeouts++))),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text('Points per Set'),
+          Row(
+            children: List.generate(3, (i) => Expanded(child: _scoreBox('Set ${i+1}', teamAPoints[i], () => setState(() => teamAPoints[i]++)))),
+          ),
+          SizedBox(height: 16),
+          Text('Team B: ${widget.gameData['teamBName'] ?? 'B'}'),
+          Row(
+            children: [
+              Expanded(child: _scoreBox('Sets Won', teamBSets, () => setState(() => teamBSets++))),
+              Expanded(child: _scoreBox('Timeouts', teamBTimeouts, () => setState(() => teamBTimeouts++))),
+            ],
+          ),
+          SizedBox(height: 8),
+          Text('Points per Set'),
+          Row(
+            children: List.generate(3, (i) => Expanded(child: _scoreBox('Set ${i+1}', teamBPoints[i], () => setState(() => teamBPoints[i]++)))),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _submitThrowballScore,
+            child: Text('Submit Score'),
+          ),
+        ],
+      ),
     );
   }
 

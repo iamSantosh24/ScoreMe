@@ -9,6 +9,7 @@ void openTossScreen(BuildContext context, {
   required String team2,
   required String matchTitle,
   required Map<String, List<String>> teamPlayers,
+  void Function(String tossWinner, String tossChoice)? onTossComplete,
 }) {
   String? tossWinner;
   String? tossChoice;
@@ -28,81 +29,54 @@ void openTossScreen(BuildContext context, {
 
   showDialog(
     context: context,
-    builder: (BuildContext dialogContext) {
-      return StatefulBuilder(
-        builder: (BuildContext context, StateSetter setState) {
-          void proceedToPlayerSelection() {
-            if (tossWinner != null && tossChoice != null) {
-              Navigator.of(dialogContext).pop(); // Close toss dialog
-              _showPlayerSelectionDialog(
-                context,
-                team1: team1,
-                team2: team2,
-                tossWinner: tossWinner!,
-                tossChoice: tossChoice!,
-                teamPlayers: teamPlayers,
-              );
-            } else {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Please select a toss winner and toss choice!'),
-                ),
-              );
-            }
-          }
-
-          return AlertDialog(
-            title: Text(matchTitle),
-            content: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '$team1 vs $team2',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButton<String>(
-                    hint: const Text('Select Toss Winner'),
-                    value: tossWinner,
-                    isExpanded: true,
-                    items: [team1, team2].map((team) {
-                      return DropdownMenuItem<String>(
-                        value: team,
-                        child: Text(team),
-                      );
-                    }).toList(),
-                    onChanged: (value) => setState(() => tossWinner = value),
-                  ),
-                  const SizedBox(height: 16),
-                  DropdownButton<String>(
-                    hint: const Text('Select Toss Choice'),
-                    value: tossChoice,
-                    isExpanded: true,
-                    items: tossChoices.map((choice) {
-                      return DropdownMenuItem<String>(
-                        value: choice,
-                        child: Text(choice),
-                      );
-                    }).toList(),
-                    onChanged: (value) => setState(() => tossChoice = value),
-                  ),
-                ],
-              ),
+    builder: (context) {
+      return AlertDialog(
+        title: Text('Toss'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text('Who won the toss?'),
+            DropdownButton<String>(
+              value: tossWinner,
+              hint: Text('Select team'),
+              items: [team1, team2].map((team) => DropdownMenuItem(
+                value: team,
+                child: Text(team),
+              )).toList(),
+              onChanged: (value) {
+                tossWinner = value;
+                (context as Element).markNeedsBuild();
+              },
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(),
-                child: const Text('Cancel'),
-              ),
-              ElevatedButton(
-                onPressed: proceedToPlayerSelection,
-                child: const Text('Proceed'),
-              ),
-            ],
-          );
-        },
+            SizedBox(height: 16),
+            Text('Choice after toss'),
+            DropdownButton<String>(
+              value: tossChoice,
+              hint: Text('Select choice'),
+              items: tossChoices.map((choice) => DropdownMenuItem(
+                value: choice,
+                child: Text(choice),
+              )).toList(),
+              onChanged: (value) {
+                tossChoice = value;
+                (context as Element).markNeedsBuild();
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              if (tossWinner != null && tossChoice != null) {
+                Navigator.of(context).pop();
+                if (onTossComplete != null) {
+                  onTossComplete(tossWinner!, tossChoice!);
+                }
+              }
+            },
+            child: Text('Continue'),
+          ),
+        ],
       );
     },
   );

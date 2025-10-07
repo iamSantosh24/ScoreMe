@@ -74,16 +74,18 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
       return;
     }
     await viewModel.fetchAllTabData(widget.username);
+    print('Raw scheduledGames: ' + viewModel.scheduledGames.toString());
+    print('Filtered upcomingScheduledGames: ' + viewModel.upcomingScheduledGames.toString());
     List<dynamic> allGames = viewModel.upcomingScheduledGames;
     List<dynamic> filteredGames = [];
     if (widget.role == 'god_admin' || widget.role == 'super_admin') {
-      filteredGames = allGames.where((g) => (g['leagueId'] == selectedLeague.id || g['leagueId'] == selectedLeague['id'])).toList();
+      filteredGames = allGames.where((g) => (g['leagueId'] == selectedLeague.id)).toList();
       print('Filtered Games: $filteredGames');
     } else {
       List<dynamic> userTeams = viewModel.teams;
       List<dynamic> userTeamIds = userTeams.map((t) => t['_id'] ?? t['id']).toList();
       filteredGames = allGames.where((g) =>
-        (g['leagueId'] == selectedLeague.id || g['leagueId'] == selectedLeague['id']) &&
+        (g['leagueId'] == selectedLeague.id) &&
         (userTeamIds.contains(g['teamAId']) || userTeamIds.contains(g['teamBId']))
       ).toList();
       print('Filtered Games: $filteredGames');
@@ -180,14 +182,14 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
   }
 
   Widget _getSportWidget(String sportType, Map<String, dynamic> gameData) {
-    if (sportType == 'Cricket') {
-      final team1 = gameData['teamAName'] ?? 'Team A';
-      final team2 = gameData['teamBName'] ?? 'Team B';
-      final matchTitle = gameData['matchTitle'] ?? '${team1} vs ${team2}';
-      final teamAId = gameData['teamAId'] ?? gameData['teamA'] ?? '';
-      final teamBId = gameData['teamBId'] ?? gameData['teamB'] ?? '';
+    final team1 = gameData['teamAName'] ?? 'Team A';
+    final team2 = gameData['teamBName'] ?? 'Team B';
+    final matchTitle = gameData['matchTitle'] ?? '${team1} vs ${team2}';
+    final teamAId = gameData['teamAId'] ?? gameData['teamA'] ?? '';
+    final teamBId = gameData['teamBId'] ?? gameData['teamB'] ?? '';
+    if (sportType == 'Cricket' || sportType == 'Throwball') {
       return FutureBuilder<void>(
-        future: _fetchAndOpenTossScreen(context, team1, team2, matchTitle, teamAId, teamBId),
+        future: _fetchAndOpenTossScreen(context, team1, team2, matchTitle, teamAId, teamBId, sportType, gameData),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -198,14 +200,12 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
           }
         },
       );
-    } else if (sportType == 'Throwball') {
-      return ThrowballLiveScore(gameData: gameData);
     } else {
       return Center(child: Text('Unsupported sport type'));
     }
   }
 
-  Future<void> _fetchAndOpenTossScreen(BuildContext context, String team1, String team2, String matchTitle, String teamAId, String teamBId) async {
+  Future<void> _fetchAndOpenTossScreen(BuildContext context, String team1, String team2, String matchTitle, String teamAId, String teamBId, [String? sportType, Map<String, dynamic>? gameData]) async {
     final vm = GameHomeViewModel();
     await vm.fetchTeamMembers(teamAId, teamBId);
     if (vm.error.isNotEmpty) throw Exception(vm.error);
@@ -213,12 +213,37 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
       team1: vm.teamAPlayers,
       team2: vm.teamBPlayers,
     };
-    openTossScreen(context,
-      sportType: widget.sportType,
+    openTossScreen(
+      context,
+      sportType: sportType ?? widget.sportType,
       team1: team1,
       team2: team2,
       matchTitle: matchTitle,
       teamPlayers: teamPlayers,
+      onTossComplete: (tossWinner, tossChoice) {
+        // Merge tossWinner, tossChoice, teamPlayers into gameData
+        final updatedGameData = Map<String, dynamic>.from(gameData ?? widget.gameData)
+          ..['tossWinner'] = tossWinner
+          ..['tossChoice'] = tossChoice
+          ..['teamPlayers'] = teamPlayers;
+        if ((sportType ?? widget.sportType) == 'Cricket') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => CricketLiveScore(
+                gameData: updatedGameData,
+              ),
+            ),
+          );
+        } else if ((sportType ?? widget.sportType) == 'Throwball') {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => ThrowballLiveScore(
+                gameData: updatedGameData,
+              ),
+            ),
+          );
+        }
+      },
     );
   }
 }
