@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scorer/update_teams_screen.dart';
 import 'viewmodels/TeamHomeViewModel.dart';
 import 'widgets/GameCard.dart';
 
@@ -7,8 +8,9 @@ class TeamHomeScreen extends StatefulWidget {
   final Map<String, dynamic> team;
   final List<dynamic> leagues;
   final List<dynamic> scheduledGames;
+  final String role;
 
-  const TeamHomeScreen({super.key, required this.team, required this.leagues, required this.scheduledGames});
+  const TeamHomeScreen({super.key, required this.team, required this.leagues, required this.scheduledGames, required this.role});
 
   @override
   State<TeamHomeScreen> createState() => _TeamHomeScreenState();
@@ -49,6 +51,30 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with SingleTickerProvid
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (widget.role != 'player')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      var leagueId = widget.team['leagueId'];
+                      if (leagueId is List && leagueId.isNotEmpty) {
+                        leagueId = leagueId[0];
+                      }
+                      if (leagueId is! String) {
+                        leagueId = leagueId?.toString() ?? '';
+                      }
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => UpdateTeamsScreen(
+                            leagueId: leagueId,
+                            leagueName: widget.leagues.isNotEmpty ? (widget.leagues[0].name ?? '') : '',
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Update Team Info'),
+                  ),
+                ),
               Text('Leagues:', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
               ...widget.leagues.map((league) => Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),

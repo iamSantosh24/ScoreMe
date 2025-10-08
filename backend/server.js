@@ -111,7 +111,7 @@ const Leagues = mongoose.model('Leagues', leagueSchema, 'leagues');
 const teamsSchema = new mongoose.Schema({
   _id: { type: String, required: true },
   name: { type: String },
-  leagueId: { type: mongoose.Schema.Types.Mixed }, // can be array or string
+  leagueId: [{ type: String }], // <-- Store leagueId as array of strings
   members: [{ type: String }],
   sport: { type: String },
   createdAt: { type: Date }
@@ -253,10 +253,17 @@ app.get('/tournaments', async (req, res) => {
 
 // Team endpoints
 app.post('/teams', async (req, res) => {
-  const { name, tournamentId, members } = req.body;
+  const { name, tournamentId, members, leagueId } = req.body;
   if (!name || !tournamentId) return res.status(400).json({ error: 'Missing team name or tournamentId' });
   try {
-    const team = new Team({ name, tournament: tournamentId, members: Array.isArray(members) ? members : [] });
+    const team = new Teams({
+      _id: new mongoose.Types.ObjectId().toString(),
+      name,
+      leagueId: Array.isArray(leagueId) ? leagueId : leagueId ? [leagueId] : [], // <-- Always store as array
+      members: Array.isArray(members) ? members : [],
+      sport: '',
+      createdAt: new Date()
+    });
     await team.save();
     res.json({ message: 'Team created', team });
   } catch (err) {

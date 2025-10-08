@@ -191,6 +191,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                                             team: team,
                                             leagues: teamLeagues,
                                             scheduledGames: teamGames,
+                                            role: widget.role,
                                           ),
                                         ),
                                       );
