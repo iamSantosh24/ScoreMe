@@ -32,8 +32,13 @@ const User = mongoose.model('User', userSchema);
 // Tournament schema/model
 const tournamentSchema = new mongoose.Schema({
   name: { type: String, required: true, unique: true },
-  games: [{ type: String }], // Added games array
-  members: [{ type: String }], // Added members array
+  games: [{ type: String }],
+  members: [{ type: String }],
+  rules: {
+    numberOfSets: { type: Number, default: 3 },
+    pointsPerSet: { type: Number, default: 25 },
+    timeoutsPerSet: { type: Number, default: 2 }
+  }
 });
 const Tournament = mongoose.model('Tournament', tournamentSchema);
 
@@ -226,10 +231,10 @@ app.get('/profile', (req, res) => {
 
 // Tournament endpoints
 app.post('/tournaments', async (req, res) => {
-  const { name } = req.body;
+  const { name, games, members, rules } = req.body;
   if (!name) return res.status(400).json({ error: 'Missing tournament name' });
   try {
-    const tournament = new Tournament({ name });
+    const tournament = new Tournament({ name, games, members, rules });
     await tournament.save();
     res.json({ message: 'Tournament created', tournament });
   } catch (err) {
@@ -256,6 +261,27 @@ app.post('/teams', async (req, res) => {
     res.json({ message: 'Team created', team });
   } catch (err) {
     res.status(500).json({ error: 'Failed to create team' });
+  }
+});
+
+// Create League endpoint
+app.post('/leagues', async (req, res) => {
+  const { name, sport, region, status, teams, rules } = req.body;
+  if (!name) return res.status(400).json({ error: 'Missing league name' });
+  try {
+    const league = new Leagues({
+      _id: new mongoose.Types.ObjectId().toString(),
+      name,
+      sport,
+      region,
+      status: status || 'active',
+      teams: teams || [],
+      rules: rules || {}
+    });
+    await league.save();
+    res.json({ message: 'League created', league });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to create league' });
   }
 });
 

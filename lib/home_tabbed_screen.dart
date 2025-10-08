@@ -6,6 +6,7 @@ import 'widgets/GameCard.dart';
 import 'leagues_util.dart';
 import 'league_home_screen.dart';
 import 'team_home_screen.dart';
+import 'league_management_screen.dart'; // Import the TournamentManagementScreen
 
 class HomeTabbedScreen extends StatefulWidget {
   final String username;
@@ -105,32 +106,54 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               );
                       })(),
                       // My Leagues Tab
-                      vm.leagues.isEmpty
-                          ? const Center(child: Text('No leagues found'))
-                          : ListView.builder(
-                              itemCount: vm.leagues.length,
-                              itemBuilder: (context, index) {
-                                final league = vm.leagues[index];
-                                return Card(
-                                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                  child: ListTile(
-                                    title: Text(league.name, style: const TextStyle(fontWeight: FontWeight.bold)),
-                                    trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) => LeagueHomeScreen(
-                                            league: league,
-                                            scheduledGames: viewModel.upcomingScheduledGames,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                );
-                              },
+                      Column(
+                        children: [
+                          if (widget.role == 'god_admin')
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              child: ElevatedButton.icon(
+                                icon: const Icon(Icons.add),
+                                label: const Text('Create New League'),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const LeagueManagementScreen(),
+                                    ),
+                                  );
+                                },
+                              ),
                             ),
+                          vm.leagues.isEmpty
+                              ? const Center(child: Text('No leagues found'))
+                              : ListView.builder(
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  itemCount: vm.leagues.length,
+                                  itemBuilder: (context, index) {
+                                    final league = vm.leagues[index];
+                                    return Card(
+                                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                                      child: ListTile(
+                                        title: Text(league.name, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                                        onTap: () {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (_) => LeagueHomeScreen(
+                                                league: league,
+                                                scheduledGames: viewModel.upcomingScheduledGames,
+                                              ),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  },
+                                ),
+                        ],
+                      ),
                       // My Teams Tab
                       vm.teams == null || vm.teams.isEmpty
                           ? const Center(child: Text('No teams found'))

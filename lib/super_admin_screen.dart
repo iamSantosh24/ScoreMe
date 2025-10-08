@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'tournament_management_screen.dart';
+import 'league_management_screen.dart';
 
 class SuperAdminScreen extends StatelessWidget {
   const SuperAdminScreen({super.key});
@@ -13,7 +13,7 @@ class SuperAdminScreen extends StatelessWidget {
           onPressed: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const TournamentManagementScreen()),
+              MaterialPageRoute(builder: (context) => const LeagueManagementScreen()),
             );
           },
           child: const Text('Open Tournament Management'),
