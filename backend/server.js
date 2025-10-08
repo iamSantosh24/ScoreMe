@@ -113,6 +113,23 @@ const teamsSchema = new mongoose.Schema({
 });
 const Teams = mongoose.model('Teams', teamsSchema, 'teams');
 
+// PointsTable schema/model
+const pointsTableSchema = new mongoose.Schema({
+  leagueId: { type: String, required: true },
+  sport: { type: String, required: true },
+  updatedAt: { type: Date, default: Date.now },
+  table: [
+    {
+      team: String,
+      matches: Number,
+      wins: Number,
+      losses: Number,
+      pointsDifference: Number
+    }
+  ]
+}, { collection: 'pointstables' });
+const PointsTable = mongoose.model('PointsTable', pointsTableSchema);
+
 // Helper to check god_admin status
 async function isGodAdmin(username) {
   const admin = await GodAdmin.findOne({ username });
@@ -722,6 +739,20 @@ app.get('/games/results', async (req, res) => {
   } catch (err) {
     console.error('Error fetching game results:', err);
     res.status(500).json({ error: 'Failed to fetch game results' });
+  }
+});
+
+// GET endpoint for points table by leagueId (cleaner RESTful route)
+app.get('/leagues/:leagueId/points-table', async (req, res) => {
+  try {
+    const leagueId = req.params.leagueId;
+    const pointsTable = await PointsTable.findOne({ leagueId });
+    if (!pointsTable) {
+      return res.status(404).json({ error: 'Points table not found' });
+    }
+    res.json(pointsTable);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error' });
   }
 });
 

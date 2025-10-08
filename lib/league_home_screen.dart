@@ -4,27 +4,9 @@ import 'package:provider/provider.dart';
 import 'viewmodels/LeagueHomeViewModel.dart';
 import 'widgets/GameCard.dart';
 import 'match_results_screen.dart';
-
-class PointsTableWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Points Table coming soon'));
-  }
-}
-
-class PlayerStatsWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Player Stats coming soon'));
-  }
-}
-
-class RulesWidget extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const Center(child: Text('Rules coming soon'));
-  }
-}
+import 'widgets/points_table_widget.dart';
+import 'widgets/player_stats_widget.dart';
+import 'widgets/rules_widget.dart';
 
 class LeagueHomeScreen extends StatefulWidget {
   final League league;
@@ -116,7 +98,7 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with TickerProvider
               controller: _mainTabController,
               children: [
                 buildMatchesTab(),
-                PointsTableWidget(),
+                PointsTableWidget(leagueId: widget.league.id),
                 PlayerStatsWidget(),
                 RulesWidget(),
               ],
