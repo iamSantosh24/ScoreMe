@@ -822,4 +822,19 @@ app.put('/leagues/:id/teams', async (req, res) => {
   }
 });
 
+// Update rules in a league
+app.put('/leagues/:id/rules', async (req, res) => {
+  const leagueId = req.params.id;
+  const { rules } = req.body;
+  if (!rules || typeof rules !== 'object') {
+    return res.status(400).json({ error: 'Rules must be provided as an object' });
+  }
+  try {
+    await Leagues.updateOne({ _id: leagueId }, { $set: { rules } });
+    res.json({ message: 'Rules updated', rules });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update rules' });
+  }
+});
+
 app.listen(3000, '0.0.0.0', () => console.log('Backend running on http://0.0.0.0:3000'));
