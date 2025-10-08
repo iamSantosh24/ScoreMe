@@ -5,6 +5,8 @@ import 'tournament_home_screen.dart';
 import 'player_profile_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'profile_screen.dart';
+import 'league_home_screen.dart';
+import 'team_home_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -19,9 +21,11 @@ class _SearchScreenState extends State<SearchScreen> {
   String error = '';
   List<dynamic> tournaments = [];
   List<dynamic> players = [];
+  List<dynamic> leagues = [];
+  List<dynamic> teams = [];
 
   Future<void> performSearch() async {
-    setState(() { loading = true; error = ''; tournaments = []; players = []; });
+    setState(() { loading = true; error = ''; tournaments = []; players = []; leagues = []; teams = []; });
     try {
       final res = await http.get(
         Uri.parse('http://192.168.1.134:3000/search?query=$query'),
@@ -34,15 +38,15 @@ class _SearchScreenState extends State<SearchScreen> {
         setState(() {
           tournaments = data['tournaments'] ?? [];
           players = data['players'] ?? [];
+          leagues = data['leagues'] ?? [];
+          teams = data['teams'] ?? [];
         });
         print('Tournaments found: \\${tournaments.length}');
         print('Players found: \\${players.length}');
-        if (tournaments.isEmpty && players.isEmpty) {
+        print('Leagues found: \\${leagues.length}');
+        print('Teams found: \\${teams.length}');
+        if (tournaments.isEmpty && players.isEmpty && leagues.isEmpty && teams.isEmpty) {
           setState(() { error = 'No results found.'; });
-        } else if (tournaments.isEmpty) {
-          setState(() { error = 'No tournaments found.'; });
-        } else if (players.isEmpty) {
-          setState(() { error = 'No players found.'; });
         } else {
           setState(() { error = ''; });
         }
@@ -84,7 +88,7 @@ class _SearchScreenState extends State<SearchScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
-              decoration: const InputDecoration(labelText: 'Search tournaments or players'),
+              decoration: const InputDecoration(labelText: 'Search tournaments, players, leagues, or teams'),
               onChanged: (val) => query = val,
             ),
             ElevatedButton(
@@ -122,6 +126,40 @@ class _SearchScreenState extends State<SearchScreen> {
               title: Text(p['username']),
               onTap: () {
                 openProfileOrPlayer(context, p['username']);
+              },
+            )),
+            if (leagues.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 24.0),
+                child: Text('Leagues:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+            ...leagues.map((l) => ListTile(
+              title: Text(l['name'] ?? l.toString()),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LeagueHomeScreen(league: l, scheduledGames: []),
+                  ),
+                );
+              },
+            )),
+            if (teams.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 24.0),
+                child: Text('Teams:', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ),
+            ...teams.map((t) => ListTile(
+              title: Text(t['name'] ?? t.toString()),
+              onTap: () async {
+                final storage = const FlutterSecureStorage();
+                final role = await storage.read(key: 'auth_role') ?? '';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => TeamHomeScreen(team: t, leagues: [], scheduledGames: [], role: role),
+                  ),
+                );
               },
             )),
           ],

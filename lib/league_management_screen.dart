@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'tournament_details_screen.dart';
+import 'package:scorer/viewmodels/NotificationsViewModel.dart';
 import 'existing_leagues_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:provider/provider.dart';
 
 class LeagueManagementScreen extends StatefulWidget {
   const LeagueManagementScreen({super.key});
@@ -99,13 +100,58 @@ class _LeagueManagementScreenState extends State<LeagueManagementScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Assume user role and username are passed via ModalRoute arguments or Provider
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final role = args?['role'] ?? '';
+    final username = args?['username'] ?? '';
     return Scaffold(
       appBar: AppBar(title: const Text('League Management')),
       body: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (role != 'admin' && role != 'super_admin' && role != 'god_admin')
+              ChangeNotifierProvider(
+                create: (_) => NotificationsViewModel(),
+                child: Consumer<NotificationsViewModel>(
+                  builder: (context, vm, _) {
+                    return Row(
+                      children: [
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.admin_panel_settings),
+                          label: const Text('Request Admin'),
+                          onPressed: () async {
+                            final success = await vm.sendPermissionRequest(
+                              username,
+                              'admin',
+                              'League Management',
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(success ? 'Admin request sent!' : 'Failed to send request')),
+                            );
+                          },
+                        ),
+                        const SizedBox(width: 16),
+                        ElevatedButton.icon(
+                          icon: const Icon(Icons.security),
+                          label: const Text('Request Super Admin'),
+                          onPressed: () async {
+                            final success = await vm.sendPermissionRequest(
+                              username,
+                              'super_admin',
+                              'League Management',
+                            );
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(success ? 'Super Admin request sent!' : 'Failed to send request')),
+                            );
+                          },
+                        ),
+                      ],
+                    );
+                  },
+                ),
+              ),
             ElevatedButton(
               onPressed: _showCreateLeagueDialog,
               child: const Text('Create League'),

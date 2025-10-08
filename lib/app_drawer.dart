@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:scorer/update_admin_screen.dart';
 import 'package:scorer/update_super_admin_screen.dart';
 import 'package:scorer/update_teams_screen.dart';
+import 'package:scorer/viewmodels/NotificationsViewModel.dart';
 import 'notifications_screen.dart';
 import 'profile_screen.dart';
 import 'search_screen.dart';
@@ -125,11 +127,47 @@ class AppDrawer extends StatelessWidget {
             ),
           ],
           // Notifications should be visible for any role
-          ListTile(
-            leading: const Icon(Icons.notifications),
-            title: const Text('Notifications'),
-            onTap: () {
-              Navigator.of(context).push(MaterialPageRoute(builder: (_) => NotificationsScreen()));
+          Consumer<NotificationsViewModel>(
+            builder: (context, vm, _) {
+              return ListTile(
+                leading: Stack(
+                  children: [
+                    const Icon(Icons.notifications),
+                    if (vm.unreadCount > 0)
+                      Positioned(
+                        right: 0,
+                        child: Container(
+                          padding: const EdgeInsets.all(2),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          constraints: const BoxConstraints(
+                            minWidth: 12,
+                            minHeight: 12,
+                          ),
+                          child: Text(
+                            vm.unreadCount.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 8,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                title: const Text('Notifications'),
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => NotificationsScreen(role: role, userId: username),
+                    ),
+                  );
+                },
+              );
             },
           ),
           ListTile(

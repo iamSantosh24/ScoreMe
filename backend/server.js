@@ -135,6 +135,17 @@ const pointsTableSchema = new mongoose.Schema({
 }, { collection: 'pointstables' });
 const PointsTable = mongoose.model('PointsTable', pointsTableSchema);
 
+// PermissionRequest schema/model
+const permissionRequestSchema = new mongoose.Schema({
+  requesterId: { type: String, required: true },
+  requestType: { type: String, required: true },
+  targetId: { type: String },
+  targetName: { type: String },
+  status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
+  createdAt: { type: Date, default: Date.now }
+});
+const PermissionRequest = mongoose.model('PermissionRequest', permissionRequestSchema);
+
 // Helper to check god_admin status
 async function isGodAdmin(username) {
   const admin = await GodAdmin.findOne({ username });
@@ -475,7 +486,9 @@ app.get('/search', async (req, res) => {
   try {
     const tournaments = await Tournament.find({ name: { $regex: query, $options: 'i' } });
     const players = await User.find({ username: { $regex: query, $options: 'i' } });
-    res.json({ tournaments, players });
+    const leagues = await Leagues.find({ name: { $regex: query, $options: 'i' } });
+    const teams = await Teams.find({ name: { $regex: query, $options: 'i' } });
+    res.json({ tournaments, players, leagues, teams });
   } catch (err) {
     res.status(500).json({ error: 'Search failed' });
   }
@@ -841,6 +854,112 @@ app.put('/leagues/:id/rules', async (req, res) => {
     res.json({ message: 'Rules updated', rules });
   } catch (err) {
     res.status(500).json({ error: 'Failed to update rules' });
+  }
+});
+
+// POST /permission-requests
+app.post('/permission-requests', async (req, res) => {
+  const { requesterId, requestType, targetId, targetName } = req.body;
+  if (!requesterId || !requestType) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+  try {
+    const newRequest = new PermissionRequest({
+      requesterId,
+      requestType,
+      targetId,
+      targetName,
+      status: 'pending',
+      createdAt: new Date()
+    });
+    await newRequest.save();
+    res.json({ message: 'Permission request submitted', request: newRequest });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to submit permission request' });
+  }
+});
+
+// GET /permission-requests
+app.get('/permission-requests', async (req, res) => {
+  const { role, userId } = req.query;
+  if (!role || !userId) {
+    return res.status(400).json({ error: 'Missing role or userId' });
+  }
+  try {
+    let requests = [];
+    if (role === 'admin') {
+      // Admins see join_team requests for their teams
+      // Find teams where user is admin
+      const adminTeams = await TeamAdmin.find({ username: userId });
+      const teamIds = adminTeams.map(a => a.teamId);
+      requests = await PermissionRequest.find({ requestType: 'join_team', targetId: { $in: teamIds } });
+    } else if (role === 'super_admin') {
+      // Super admins see admin requests for their leagues
+      const superAdminLeagues = await SuperAdmin.find({ username: userId });
+      const leagueIds = superAdminLeagues.map(sa => sa.leagueId);
+      requests = await PermissionRequest.find({ requestType: 'admin', targetId: { $in: leagueIds } });
+    } else if (role === 'god_admin') {
+      // God admins see all admin and super_admin requests
+      requests = await PermissionRequest.find({ requestType: { $in: ['admin', 'super_admin'] } });
+    }
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch permission requests' });
+  }
+});
+
+// Permission-requests endpoint for notifications tab
+app.get('/api/permission-requests', async (req, res) => {
+  try {
+    // Optionally filter by user if needed: e.g., { requesterId: req.user.username }
+    const requests = await PermissionRequest.find().sort({ createdAt: -1 });
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch permission requests' });
+  }
+});
+
+// PATCH endpoint to update permission-request status
+app.patch('/permission-requests/:id', async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  if (!['approved', 'rejected', 'pending'].includes(status)) {
+    return res.status(400).json({ error: 'Invalid status value' });
+  }
+  try {
+    const request = await PermissionRequest.findByIdAndUpdate(
+      id,
+      { status },
+      { new: true }
+    );
+    if (!request) {
+      return res.status(404).json({ error: 'Permission request not found' });
+    }
+    // If join_team request is approved, add requester to team's members array
+    if (request.requestType === 'join_team' && status === 'approved' && request.targetId && request.requesterId) {
+      await Teams.updateOne(
+        { _id: request.targetId },
+        { $addToSet: { members: request.requesterId } }
+      );
+    }
+    // If change_role request is approved, update user's role in users collection
+    if (request.requestType === 'change_role' && status === 'approved' && request.requesterId && request.targetName) {
+      const allowedRoles = ['player', 'admin', 'super_admin', 'god_admin'];
+      if (!allowedRoles.includes(request.targetName)) {
+        return res.status(400).json({ error: 'Invalid role requested' });
+      }
+      const user = await User.findOneAndUpdate(
+        { username: request.requesterId },
+        { role: request.targetName },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ error: 'User not found for role update' });
+      }
+    }
+    res.json({ message: 'Status updated', request });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update permission request' });
   }
 });
 

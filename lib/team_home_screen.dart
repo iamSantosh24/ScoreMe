@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scorer/update_teams_screen.dart';
 import 'viewmodels/TeamHomeViewModel.dart';
+import 'viewmodels/NotificationsViewModel.dart';
 import 'widgets/GameCard.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TeamHomeScreen extends StatefulWidget {
   final Map<String, dynamic> team;
@@ -51,7 +53,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with SingleTickerProvid
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              if (widget.role != 'player')
+              if (widget.role == 'admin' || widget.role == 'super_admin' || widget.role == 'god_admin')
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12.0),
                   child: ElevatedButton(
@@ -126,6 +128,32 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with SingleTickerProvid
                   ],
                 ),
               ),
+              if (widget.role == 'player')
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12.0),
+                  child: ChangeNotifierProvider(
+                    create: (_) => NotificationsViewModel(),
+                    child: Consumer<NotificationsViewModel>(
+                      builder: (context, vm, _) {
+                        return ElevatedButton.icon(
+                          icon: const Icon(Icons.group_add),
+                          label: const Text('Request to Join Team'),
+                          onPressed: () async {
+                            final teamId = widget.team['_id'] ?? widget.team['id'];
+                            final teamName = widget.team['name'] ?? '';
+                            final storage = const FlutterSecureStorage();
+                            final userId = await storage.read(key: 'auth_username') ?? '';
+                            final success = await vm.sendJoinTeamRequest(userId, teamId, teamName);
+                            final snackMsg = success ? 'Request sent!' : (vm.error.isNotEmpty ? vm.error : 'Failed to send request');
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(snackMsg)),
+                            );
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
