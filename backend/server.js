@@ -782,4 +782,14 @@ app.get('/leagues/:leagueId/points-table', async (req, res) => {
   }
 });
 
+// Endpoint to return the list of leagues
+app.get('/leagues', async (req, res) => {
+  try {
+    const leagues = await Leagues.find({});
+    res.json(leagues);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch leagues' });
+  }
+});
+
 app.listen(3000, '0.0.0.0', () => console.log('Backend running on http://0.0.0.0:3000'));

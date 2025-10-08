@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'tournament_details_screen.dart';
-import 'existing_tournaments_screen.dart';
+import 'existing_leagues_screen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -109,11 +109,11 @@ class _LeagueManagementScreenState extends State<LeagueManagementScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const ExistingTournamentsScreen(),
+                    builder: (context) => const ExistingLeaguesScreen(),
                   ),
                 );
               },
-              child: const Text('Existing Tournament'),
+              child: const Text('Existing Leagues'),
             ),
           ],
         ),
