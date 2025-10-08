@@ -14,10 +14,10 @@ class LeagueManagementScreen extends StatefulWidget {
 class _LeagueManagementScreenState extends State<LeagueManagementScreen> {
   void _showCreateLeagueDialog() {
     final TextEditingController nameController = TextEditingController();
-    final TextEditingController sportController = TextEditingController();
     final TextEditingController regionController = TextEditingController();
     final TextEditingController statusController = TextEditingController(text: 'active');
     final TextEditingController teamsController = TextEditingController();
+    String selectedSport = 'Throw Ball';
     showDialog(
       context: context,
       builder: (context) {
@@ -31,9 +31,16 @@ class _LeagueManagementScreenState extends State<LeagueManagementScreen> {
                   controller: nameController,
                   decoration: const InputDecoration(labelText: 'League Name'),
                 ),
-                TextField(
-                  controller: sportController,
+                DropdownButtonFormField<String>(
+                  value: selectedSport,
                   decoration: const InputDecoration(labelText: 'Sport'),
+                  items: const [
+                    DropdownMenuItem(value: 'Throw Ball', child: Text('Throw Ball')),
+                    DropdownMenuItem(value: 'Cricket', child: Text('Cricket')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) selectedSport = value;
+                  },
                 ),
                 TextField(
                   controller: regionController,
@@ -58,28 +65,28 @@ class _LeagueManagementScreenState extends State<LeagueManagementScreen> {
             ElevatedButton(
               onPressed: () async {
                 final name = nameController.text.trim();
-                final sport = sportController.text.trim();
+                final sport = selectedSport;
                 final region = regionController.text.trim();
                 final status = statusController.text.trim();
-                final teams = teamsController.text.trim().split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-                if (name.isEmpty || sport.isEmpty || region.isEmpty || status.isEmpty || teams.isEmpty) return;
+                final teams = teamsController.text.trim().isNotEmpty
+                  ? teamsController.text.split(',').map((t) => t.trim()).toList()
+                  : [];
                 final response = await http.post(
                   Uri.parse('http://192.168.1.134:3000/leagues'),
-                  headers: {'Content-Type': 'application/json'},
+                  headers: { 'Content-Type': 'application/json' },
                   body: json.encode({
                     'name': name,
                     'sport': sport,
                     'region': region,
                     'status': status,
                     'teams': teams,
-                    'createdAt': DateTime.now().toUtc().toIso8601String(),
                   }),
                 );
                 if (response.statusCode == 200) {
                   Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('League created successfully!')),
-                  );
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('League created successfully')));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to create league')));
                 }
               },
               child: const Text('Create'),

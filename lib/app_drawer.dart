@@ -7,11 +7,47 @@ import 'profile_screen.dart';
 import 'search_screen.dart';
 import 'login_screen.dart';
 import 'live_score_screen.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AppDrawer extends StatelessWidget {
   final String role;
   final String username;
   const AppDrawer({super.key, required this.role, required this.username});
+
+  Future<void> _selectLeagueAndNavigate(BuildContext context) async {
+    final response = await http.get(Uri.parse('http://192.168.1.134:3000/leagues'));
+    if (response.statusCode == 200) {
+      final List leagues = json.decode(response.body);
+      showModalBottomSheet(
+        context: context,
+        builder: (ctx) {
+          return ListView.builder(
+            itemCount: leagues.length,
+            itemBuilder: (context, index) {
+              final league = leagues[index];
+              return ListTile(
+                title: Text(league['name'] ?? ''),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => UpdateTeamsScreen(
+                        leagueId: league['_id'],
+                        leagueName: league['name'] ?? '',
+                      ),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        },
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Failed to fetch leagues')));
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +93,7 @@ class AppDrawer extends StatelessWidget {
               leading: const Icon(Icons.group_work),
               title: const Text('Update Teams'),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => UpdateTeamsScreen()));
+                _selectLeagueAndNavigate(context);
               },
             ),
           ],
@@ -74,7 +110,7 @@ class AppDrawer extends StatelessWidget {
               leading: const Icon(Icons.group_work),
               title: const Text('Update Teams'),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => UpdateTeamsScreen()));
+                _selectLeagueAndNavigate(context);
               },
             ),
           ],
@@ -84,7 +120,7 @@ class AppDrawer extends StatelessWidget {
               leading: const Icon(Icons.group_work),
               title: const Text('Update Teams'),
               onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(builder: (_) => UpdateTeamsScreen()));
+                _selectLeagueAndNavigate(context);
               },
             ),
           ],

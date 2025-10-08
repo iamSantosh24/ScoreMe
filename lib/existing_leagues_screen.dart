@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'tournament_details_screen.dart';
+import 'update_teams_screen.dart';
+import 'set_league_rules_screen.dart';
 
 const String apiBaseUrl = 'http://192.168.1.134:3000';
 
@@ -36,6 +37,51 @@ class _ExistingLeaguesScreenState extends State<ExistingLeaguesScreen> {
     }
   }
 
+  void _showLeagueOptions(BuildContext context, Map<String, dynamic> league) {
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.group),
+              title: const Text('Update Teams'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => UpdateTeamsScreen(
+                      leagueId: league['_id'],
+                      leagueName: league['name'] ?? '',
+                    ),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.rule),
+              title: const Text('Set Rules'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SetLeagueRulesScreen(
+                      leagueId: league['_id'],
+                      leagueName: league['name'] ?? '',
+                    ),
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -52,15 +98,7 @@ class _ExistingLeaguesScreenState extends State<ExistingLeaguesScreen> {
                       title: Text(t['name'] ?? ''),
                       trailing: ElevatedButton(
                         onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => TournamentDetailsScreen(
-                                tournamentName: t['name'] ?? '',
-                                tournamentId: t['_id'],
-                              ),
-                            ),
-                          );
+                          _showLeagueOptions(context, t);
                         },
                         child: const Text('Open'),
                       ),

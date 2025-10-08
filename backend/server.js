@@ -792,4 +792,34 @@ app.get('/leagues', async (req, res) => {
   }
 });
 
+// Update teams in a league and create new teams in teams collection
+app.put('/leagues/:id/teams', async (req, res) => {
+  const leagueId = req.params.id;
+  const { teams } = req.body; // teams: array of team names or objects
+  if (!Array.isArray(teams)) {
+    return res.status(400).json({ error: 'Teams must be an array' });
+  }
+  try {
+    // Update league's teams array
+    await Leagues.updateOne({ _id: leagueId }, { $set: { teams } });
+    // For each team, create in teams collection if not exists
+    for (const teamName of teams) {
+      const existing = await Teams.findOne({ name: teamName, leagueId });
+      if (!existing) {
+        await new Teams({
+          _id: new mongoose.Types.ObjectId().toString(),
+          name: teamName,
+          leagueId,
+          members: [],
+          sport: '',
+          createdAt: new Date()
+        }).save();
+      }
+    }
+    res.json({ message: 'Teams updated and created', teams });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to update teams' });
+  }
+});
+
 app.listen(3000, '0.0.0.0', () => console.log('Backend running on http://0.0.0.0:3000'));
