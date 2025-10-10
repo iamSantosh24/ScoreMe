@@ -4,6 +4,7 @@ import 'viewmodels/login_viewmodel.dart';
 import 'register_screen.dart';
 import 'home_tabbed_screen.dart';
 import 'forgot_password_screen.dart';
+import 'shared_utils.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -61,13 +62,20 @@ class LoginScreen extends StatelessWidget {
                         : () async {
                             final data = await viewModel.login();
                             if (data != null && context.mounted) {
+                              // Store user details in SharedUser
+                              SharedUser.setUserDetails(
+                                firstName: data['firstName'] ?? '',
+                                lastName: data['lastName'] ?? '',
+                                email: data['email'] ?? '',
+                                contactNumber: data['contactNumber'] ?? '',
+                                profileId: data['profileId'] ?? '',
+                                roles: data['roles'] ?? [],
+                                godAdmin: data['god_admin'] ?? false,
+                              );
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => HomeTabbedScreen(
-                                    username: data['email'],
-                                    role: data['roles'].isNotEmpty ? data['roles'][0]['role'] : 'player',
-                                  ),
+                                  builder: (_) => HomeTabbedScreen(),
                                 ),
                               );
                             }

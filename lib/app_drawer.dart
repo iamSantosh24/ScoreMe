@@ -14,8 +14,8 @@ import 'package:http/http.dart' as http;
 
 class AppDrawer extends StatelessWidget {
   final String role;
-  final String username;
-  const AppDrawer({super.key, required this.role, required this.username});
+  final String email;
+  const AppDrawer({super.key, required this.role, required this.email});
 
   Future<void> _selectLeagueAndNavigate(BuildContext context) async {
     final response = await http.get(Uri.parse('http://192.168.1.134:3000/leagues'));
@@ -163,7 +163,7 @@ class AppDrawer extends StatelessWidget {
                 onTap: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (_) => NotificationsScreen(role: role, userId: username),
+                      builder: (_) => NotificationsScreen(role: role, userId: email),
                     ),
                   );
                 },
@@ -189,7 +189,7 @@ class AppDrawer extends StatelessWidget {
                   sportType: '', // Will be selected in the screen
                   gameData: {}, // Will be selected in the screen
                   role: role, // Pass the user role
-                  username: username, // Pass the actual username
+                  username: email, // Pass the actual username
                 ),
               ));
             },

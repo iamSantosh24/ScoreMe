@@ -4,12 +4,10 @@ import 'app_drawer.dart';
 import 'league_home_screen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
 import 'league_management_screen.dart';
+import 'shared_utils.dart';
 
 class HomeTabbedScreen extends StatefulWidget {
-  final String username;
-  final String role;
-
-  const HomeTabbedScreen({super.key, required this.username, required this.role});
+  const HomeTabbedScreen({super.key});
 
   @override
   State<HomeTabbedScreen> createState() => _HomeTabbedScreenState();
@@ -18,11 +16,22 @@ class HomeTabbedScreen extends StatefulWidget {
 class _HomeTabbedScreenState extends State<HomeTabbedScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  late String email;
+  late String role;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    email = SharedUser.email ?? '';
+    // Prefer god_admin if true, else use first role from roles
+    if (SharedUser.godAdmin) {
+      role = 'god_admin';
+    } else if (SharedUser.roles != null && SharedUser.roles!.isNotEmpty) {
+      role = SharedUser.roles![0]['role'] ?? 'player';
+    } else {
+      role = 'player';
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       Provider.of<HomeTabbedViewModel>(context, listen: false).fetchLeagues();
     });
@@ -37,23 +46,24 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
   Widget _buildLeaguesTab(HomeTabbedViewModel viewModel) {
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LeagueManagementScreen(),
-                  ),
-                );
-              },
-              child: const Text('Manage League'),
+        if (role == 'god_admin')
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => LeagueManagementScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Manage League'),
+              ),
             ),
           ),
-        ),
         Expanded(
           child: viewModel.isLoadingLeagues
               ? const Center(child: CircularProgressIndicator())
@@ -68,8 +78,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               child: ListTile(
-                                title: Text(league['name'] ?? 'League'),
-                                subtitle: Text(league['description'] ?? ''),
+                                title: Text(league['leagueName'] ?? 'League'),
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
@@ -99,7 +108,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
           ],
         ),
       ),
-      drawer: AppDrawer(role: widget.role, username: widget.username),
+      drawer: AppDrawer(role: role, email: email),
       body: Consumer<HomeTabbedViewModel>(
         builder: (context, viewModel, child) {
           return TabBarView(
