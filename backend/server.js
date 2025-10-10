@@ -135,6 +135,55 @@ app.post('/forgot-password', async (req, res) => {
   }
 });
 
+// Update user god_admin and/or role endpoint
+app.post('/update-user-role', async (req, res) => {
+  const { email, god_admin, role, leagueId, teamId } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    let updatedFields = {};
+    if (typeof god_admin === 'boolean') {
+      user.god_admin = god_admin;
+      updatedFields.god_admin = god_admin;
+    }
+    if (role) {
+      // Update or add role for league/team context
+      let found = false;
+      if (leagueId || teamId) {
+        for (let r of user.roles) {
+          if ((leagueId && r.leagueId === leagueId) || (teamId && r.teamId === teamId)) {
+            r.role = role;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          user.roles.push({ leagueId: leagueId || null, teamId: teamId || null, role });
+        }
+      } else {
+        // If no leagueId/teamId, update first role or add new
+        if (user.roles.length > 0) {
+          user.roles[0].role = role;
+        } else {
+          user.roles.push({ leagueId: null, teamId: null, role });
+        }
+      }
+      updatedFields.role = role;
+      updatedFields.leagueId = leagueId;
+      updatedFields.teamId = teamId;
+    }
+    await user.save();
+    return res.status(200).json({ message: 'User updated.', updatedFields, user });
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
