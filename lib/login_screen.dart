@@ -4,15 +4,10 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
 import 'register_screen.dart';
 import 'home_tabbed_screen.dart';
+import 'shared_utils.dart';
+import 'forgot_password_screen.dart';
 
-const String apiBaseUrl = 'http://192.168.1.134:3000'; // Replace with your actual IP
-
-class User {
-  final String username;
-  final String role; // 'player', 'admin', 'super_admin' , 'god_admin'
-
-  User({required this.username, required this.role});
-}
+const String apiBaseUrl = 'http://192.168.1.134:3000';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -22,12 +17,13 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _errorMessage;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   bool _rememberMe = false;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -36,11 +32,11 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _loadSavedCredentials() async {
-    final savedUsername = await _secureStorage.read(key: 'saved_username');
+    final savedEmail = await _secureStorage.read(key: 'saved_email');
     final savedPassword = await _secureStorage.read(key: 'saved_password');
-    if (savedUsername != null && savedPassword != null) {
+    if (savedEmail != null && savedPassword != null) {
       setState(() {
-        _usernameController.text = savedUsername;
+        _emailController.text = savedEmail;
         _passwordController.text = savedPassword;
         _rememberMe = true;
       });
@@ -49,34 +45,40 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _login() async {
     setState(() { _isLoading = true; _errorMessage = null; });
-    final username = _usernameController.text;
+    final email = _emailController.text;
     final password = _passwordController.text;
     try {
       final response = await http.post(
         Uri.parse('$apiBaseUrl/login'),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'username': username, 'password': password}),
+        body: json.encode({'email': email, 'password': password}),
       );
       setState(() { _isLoading = false; });
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final token = data['token'];
-        final role = data['role']?.toString() ?? '';
         if (_rememberMe) {
-          await _secureStorage.write(key: 'saved_username', value: username);
+          await _secureStorage.write(key: 'saved_email', value: email);
           await _secureStorage.write(key: 'saved_password', value: password);
         }
-        // Save token and username for profile screen
-        await _secureStorage.write(key: 'auth_token', value: token);
-        await _secureStorage.write(key: 'auth_username', value: username);
-        await _secureStorage.write(key: 'auth_role', value: role);
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => HomeTabbedScreen(username: username, role: role)));
+        SharedUser.setUserDetails(
+          firstName: data['firstName'] ?? '',
+          lastName: data['lastName'] ?? '',
+          email: data['email'] ?? '',
+          contactNumber: data['contactNumber'] ?? '',
+          profileId: data['profileId'] ?? '',
+          roles: data['roles'] ?? [],
+          godAdmin: data['god_admin'] ?? false,
+        );
+        Navigator.pushReplacement(context, MaterialPageRoute(
+          builder: (_) => HomeTabbedScreen(
+            username: data['email'],
+            role: data['roles'].isNotEmpty ? data['roles'][0]['role'] : 'player',
+          ),
+        ));
       } else {
-        print('Login error: ${response.body}');
         setState(() { _errorMessage = json.decode(response.body)['error'] ?? 'Login failed'; });
       }
     } catch (e) {
-      print('Login exception: ${e.toString()}');
       setState(() { _isLoading = false; _errorMessage = 'Login failed. Please try again.'; });
     }
   }
@@ -91,14 +93,23 @@ class _LoginScreenState extends State<LoginScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextField(
-              controller: _usernameController,
+              controller: _emailController,
               decoration: const InputDecoration(labelText: 'Email'),
+              keyboardType: TextInputType.emailAddress,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
+              decoration: InputDecoration(
+                labelText: 'Password',
+                suffixIcon: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () {
+                    setState(() { _obscurePassword = !_obscurePassword; });
+                  },
+                ),
+              ),
+              obscureText: _obscurePassword,
             ),
             Row(
               children: [
@@ -109,6 +120,13 @@ class _LoginScreenState extends State<LoginScreen> {
                   },
                 ),
                 const Text('Remember Me'),
+                const Spacer(),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const ForgotPasswordScreen()));
+                  },
+                  child: const Text('Forgot Password?'),
+                ),
               ],
             ),
             const SizedBox(height: 16),
@@ -117,11 +135,16 @@ class _LoginScreenState extends State<LoginScreen> {
               child: _isLoading ? const CircularProgressIndicator() : const Text('Login'),
             ),
             const SizedBox(height: 16),
-            TextButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
-              },
-              child: const Text('Register'),
+            Row(
+              children: [
+                const Text('New User?'),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const RegisterScreen()));
+                  },
+                  child: const Text('Register'),
+                ),
+              ],
             ),
             if (_errorMessage != null)
               Padding(

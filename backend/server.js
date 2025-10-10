@@ -82,6 +82,59 @@ app.post('/register', async (req, res) => {
   res.status(201).json({ message: 'User registered successfully.', profileId });
 });
 
+// Login endpoint
+app.post('/login', async (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: 'Email and password required.' });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+    const validPassword = await bcrypt.compare(password, user.password);
+    if (!validPassword) {
+      return res.status(401).json({ error: 'Invalid email or password.' });
+    }
+    // Success: return user details
+    return res.status(200).json({
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      contactNumber: user.contactNumber,
+      profileId: user.profileId,
+      roles: user.roles,
+      god_admin: user.god_admin
+    });
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// Forgot Password endpoint
+app.post('/forgot-password', async (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+  try {
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ error: 'No user found with this email.' });
+    }
+    // Generate a temporary password (or token) and update user's password
+    const tempPassword = Math.random().toString(36).slice(-8);
+    user.password = bcrypt.hashSync(tempPassword, 10);
+    await user.save();
+    // TODO: Send tempPassword to user's email (implement email sending logic)
+    // For now, just return the temp password in response (for testing)
+    return res.status(200).json({ message: 'Password reset. Check your email for the new password.', tempPassword });
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
