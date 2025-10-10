@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'viewmodels/NotificationsViewModel.dart';
+import 'viewmodels/HomeTabbedViewModel.dart';
 import 'login_screen.dart';
 
 void main() => runApp(
-  ChangeNotifierProvider(
-    create: (_) => NotificationsViewModel(),
+  MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => NotificationsViewModel()),
+      ChangeNotifierProvider(create: (_) => HomeTabbedViewModel()),
+    ],
     child: const MyApp(),
   ),
 );

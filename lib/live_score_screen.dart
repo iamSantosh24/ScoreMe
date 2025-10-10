@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scorer/viewmodels/GameHomeViewModel.dart';
 import 'package:scorer/widgets/GameCard.dart';
 import 'cricket_live_score.dart';
 import 'throwball_live_score.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
-import 'viewmodels/GameHomeViewModel.dart';
 import 'navigation_utils.dart';
 
 class LiveScoreScreen extends StatefulWidget {
@@ -24,41 +24,31 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
   String? selectedGame;
   List<dynamic> availableLeagues = [];
   List<dynamic> availableGames = [];
-  late HomeTabbedViewModel viewModel;
   bool isLoadingLeagues = true;
   String leagueError = '';
 
   @override
   void initState() {
     super.initState();
-    viewModel = HomeTabbedViewModel();
-    _fetchLeagues();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final vm = Provider.of<HomeTabbedViewModel>(context, listen: false);
+      vm.fetchLeagues().then((_) {
+        setState(() {
+          isLoadingLeagues = vm.isLoadingLeagues;
+          leagueError = vm.leaguesError ?? '';
+          availableLeagues = _filterLeagues(vm.leagues);
+        });
+      });
+    });
   }
 
-  Future<void> _fetchLeagues() async {
-    setState(() {
-      isLoadingLeagues = true;
-      leagueError = '';
-    });
-    try {
-      await viewModel.fetchAllTabData(widget.username);
-      final leagues = viewModel.leagues;
-      if (leagues.isEmpty) {
-        leagueError = 'No leagues found';
-      } else {
-        if (widget.role == 'god_admin' || widget.role == 'super_admin') {
-          availableLeagues = leagues;
-        } else {
-          // For admin/player, filter leagues they are part of
-          availableLeagues = leagues.where((league) => _isUserInLeague(league)).toList();
-        }
-      }
-    } catch (e) {
-      leagueError = 'Error fetching leagues';
+  List<dynamic> _filterLeagues(List<dynamic> leagues) {
+    if (widget.role == 'god_admin' || widget.role == 'super_admin') {
+      return leagues;
+    } else {
+      // For admin/player, filter leagues they are part of
+      return leagues.where((league) => _isUserInLeague(league)).toList();
     }
-    setState(() {
-      isLoadingLeagues = false;
-    });
   }
 
   bool _isUserInLeague(dynamic league) {
@@ -67,117 +57,94 @@ class _LiveScoreScreenState extends State<LiveScoreScreen> {
     return true;
   }
 
-  void _loadGames() async {
-    if (selectedLeague == null) {
-      availableGames = [];
-      setState(() {});
-      return;
-    }
-    await viewModel.fetchAllTabData(widget.username);
-    print('Raw scheduledGames: ' + viewModel.scheduledGames.toString());
-    print('Filtered upcomingScheduledGames: ' + viewModel.upcomingScheduledGames.toString());
-    List<dynamic> allGames = viewModel.upcomingScheduledGames;
-    List<dynamic> filteredGames = [];
-    if (widget.role == 'god_admin' || widget.role == 'super_admin') {
-      filteredGames = allGames.where((g) => (g['leagueId'] == selectedLeague.id)).toList();
-      print('Filtered Games: $filteredGames');
-    } else {
-      List<dynamic> userTeams = viewModel.teams;
-      List<dynamic> userTeamIds = userTeams.map((t) => t['_id'] ?? t['id']).toList();
-      filteredGames = allGames.where((g) =>
-        (g['leagueId'] == selectedLeague.id) &&
-        (userTeamIds.contains(g['teamAId']) || userTeamIds.contains(g['teamBId']))
-      ).toList();
-      print('Filtered Games: $filteredGames');
-    }
-    availableGames = filteredGames;
+  void _loadGames() {
+    // This method should be updated to fetch games from the backend or another ViewModel
+    // For now, just clear availableGames
+    availableGames = [];
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider.value(
-      value: viewModel,
-      child: Consumer<HomeTabbedViewModel>(
-        builder: (context, vm, _) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text('Live Score'),
-            ),
-            body: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(height: 32),
-                  Text('League:'),
-                  SizedBox(height: 16),
-                  Center(
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 0),
-                        child: (isLoadingLeagues)
-                          ? CircularProgressIndicator()
-                          : (leagueError.isNotEmpty)
-                            ? Text(leagueError, style: TextStyle(color: Colors.red))
-                            : DropdownButtonFormField<dynamic>(
-                                value: selectedLeague,
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                ),
-                                isExpanded: true,
-                                hint: Text('Choose League'),
-                                items: availableLeagues.map((league) => DropdownMenuItem(
-                                  value: league,
-                                  child: Text(league.name ?? league['name'] ?? league.toString()),
-                                )).toList(),
-                                onChanged: (league) {
-                                  setState(() {
-                                    selectedLeague = league;
-                                    selectedGame = null;
-                                    _loadGames();
-                                  });
-                                },
+    return Consumer<HomeTabbedViewModel>(
+      builder: (context, vm, _) {
+        return Scaffold(
+          appBar: AppBar(
+            title: Text('Live Score'),
+          ),
+          body: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                SizedBox(height: 32),
+                Text('League:'),
+                SizedBox(height: 16),
+                Center(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 0),
+                      child: (vm.isLoadingLeagues)
+                        ? CircularProgressIndicator()
+                        : (vm.leaguesError != null && vm.leaguesError!.isNotEmpty)
+                          ? Text(vm.leaguesError!, style: TextStyle(color: Colors.red))
+                          : DropdownButtonFormField<dynamic>(
+                              value: selectedLeague,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                               ),
-                      ),
+                              isExpanded: true,
+                              hint: Text('Choose League'),
+                              items: _filterLeagues(vm.leagues).map((league) => DropdownMenuItem(
+                                value: league,
+                                child: Text(league['name'] ?? league.toString()),
+                              )).toList(),
+                              onChanged: (league) {
+                                setState(() {
+                                  selectedLeague = league;
+                                  selectedGame = null;
+                                  _loadGames();
+                                });
+                              },
+                            ),
                     ),
                   ),
-                  if (selectedLeague != null) ...[
-                    SizedBox(height: 16),
-                    Text('Games:'),
-                    availableGames.isEmpty
-                      ? const Center(child: Text('No games found'))
-                      : ListView.builder(
-                          shrinkWrap: true,
-                          physics: NeverScrollableScrollPhysics(),
-                          itemCount: availableGames.length,
-                          itemBuilder: (context, index) {
-                            final game = availableGames[index];
-                            return Padding(
-                              padding: const EdgeInsets.symmetric(vertical: 8.0),
-                              child: GameCard(
-                                game: game,
-                                onTap: () {
-                                  final sportType = game['sport'] ?? game['sportType'] ?? '';
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (_) => _getSportWidget(sportType, game),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          },
-                        ),
-                  ],
+                ),
+                if (selectedLeague != null) ...[
+                  SizedBox(height: 16),
+                  Text('Games:'),
+                  availableGames.isEmpty
+                    ? const Center(child: Text('No games found'))
+                    : ListView.builder(
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: availableGames.length,
+                        itemBuilder: (context, index) {
+                          final game = availableGames[index];
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8.0),
+                            child: GameCard(
+                              game: game,
+                              onTap: () {
+                                final sportType = game['sport'] ?? game['sportType'] ?? '';
+                                Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => _getSportWidget(sportType, game),
+                                  ),
+                                );
+                              },
+                            ),
+                          );
+                        },
+                      ),
                 ],
-              ),
+              ],
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 

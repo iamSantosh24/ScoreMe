@@ -1,45 +1,28 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import '../leagues_util.dart';
 
 class HomeTabbedViewModel extends ChangeNotifier {
-  List<String> myGames = [];
-  List<String> myLeagues = [];
-  List<dynamic> scheduledGames = [];
-  List<League> leagues = [];
-  List<dynamic> teams = [];
-  bool loading = false;
-  String error = '';
+  List<dynamic> leagues = [];
+  bool isLoadingLeagues = false;
+  String? leaguesError;
 
-  Future<void> fetchAllTabData(String username) async {
-    loading = true;
-    error = '';
+  Future<void> fetchLeagues() async {
+    isLoadingLeagues = true;
+    leaguesError = null;
     notifyListeners();
     try {
-      String url = 'http://192.168.1.134:3000/user/leagues-games-teams?username=$username';
-      final res = await http.get(Uri.parse(url));
-      if (res.statusCode == 200) {
-        final data = json.decode(res.body);
-        // Scheduled Games
-        scheduledGames = data['games'] ?? [];
-        myGames = scheduledGames.map<String>((g) => g['gameName']?.toString() ?? '').toList();
-        // Leagues
-        final backendLeagues = data['leagues'] ?? [];
-        leagues = backendLeagues.map<League>((l) => League.fromJson(l)).toList();
-        myLeagues = leagues.map((l) => l.name).toList();
-        // Teams
-        teams = data['teams'] ?? [];
+      final response = await http.get(Uri.parse('http://192.168.1.134:3000/leagues'));
+      if (response.statusCode == 200) {
+        leagues = List<Map<String, dynamic>>.from(json.decode(response.body));
       } else {
-        error = json.decode(res.body)['error'] ?? 'Failed to fetch tab data';
+        leaguesError = 'Failed to load leagues.';
       }
     } catch (e) {
-      error = 'Network error';
+      leaguesError = 'Error: $e';
+    } finally {
+      isLoadingLeagues = false;
+      notifyListeners();
     }
-    loading = false;
-    notifyListeners();
   }
-
-  List<Map<String, dynamic>> get upcomingScheduledGames =>
-      filterAndSortUpcomingGames(List<Map<String, dynamic>>.from(scheduledGames));
 }

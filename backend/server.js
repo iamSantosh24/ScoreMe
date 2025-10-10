@@ -226,6 +226,16 @@ app.post('/add-league', async (req, res) => {
   }
 });
 
+// Fetch all leagues
+app.get('/leagues', async (req, res) => {
+  try {
+    const leagues = await League.find({});
+    res.status(200).json(leagues);
+  } catch (err) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+});
+
 // Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
