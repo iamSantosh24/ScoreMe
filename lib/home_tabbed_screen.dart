@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'app_drawer.dart';
 import 'league_home_screen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
+import 'league_management_screen.dart';
 
 class HomeTabbedScreen extends StatefulWidget {
   final String username;
@@ -42,7 +43,12 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () {
-                // TODO: Implement manage league navigation
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LeagueManagementScreen(),
+                  ),
+                );
               },
               child: const Text('Manage League'),
             ),

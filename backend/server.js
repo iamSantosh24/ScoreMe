@@ -70,6 +70,23 @@ function generateProfileId() {
   return id;
 }
 
+add// Helper to generate leagueId
+function generateLeagueId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let id = '';
+  let hasLetter = false;
+  let hasNumber = false;
+  while (id.length < 7) {
+    const c = chars[Math.floor(Math.random() * chars.length)];
+    id += c;
+    if (/[A-Z]/.test(c)) hasLetter = true;
+    if (/[0-9]/.test(c)) hasNumber = true;
+  }
+  // Ensure at least one letter and one number
+  if (!hasLetter || !hasNumber) return generateLeagueId();
+  return id;
+}
+
 // Registration endpoint
 app.post('/register', async (req, res) => {
   const { firstName, lastName, email, password, confirmPassword, contactNumber } = req.body;
@@ -203,15 +220,18 @@ app.post('/update-user-role', async (req, res) => {
 
 // Add League endpoint
 app.post('/add-league', async (req, res) => {
-  const { leagueId, leagueName, sport, teams, status } = req.body;
-  if (!leagueId || !leagueName || !sport) {
-    return res.status(400).json({ error: 'leagueId, leagueName, and sport are required.' });
+  const { leagueName, sport, teams, status } = req.body;
+  if (!leagueName || !sport) {
+    return res.status(400).json({ error: 'leagueName and sport are required.' });
   }
   try {
-    const existingLeague = await League.findOne({ leagueId });
-    if (existingLeague) {
-      return res.status(409).json({ error: 'League with this leagueId already exists.' });
-    }
+    let leagueId;
+    let existingLeague;
+    // Ensure unique leagueId
+    do {
+      leagueId = generateLeagueId();
+      existingLeague = await League.findOne({ leagueId });
+    } while (existingLeague);
     const league = new League({
       leagueId,
       leagueName,
