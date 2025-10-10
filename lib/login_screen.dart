@@ -5,6 +5,7 @@ import 'register_screen.dart';
 import 'home_tabbed_screen.dart';
 import 'forgot_password_screen.dart';
 import 'shared_utils.dart';
+import 'auth_utils.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -60,24 +61,24 @@ class LoginScreen extends StatelessWidget {
                     onPressed: viewModel.isLoading
                         ? null
                         : () async {
-                            final data = await viewModel.login();
-                            if (data != null && context.mounted) {
-                              // Store user details in SharedUser
-                              SharedUser.setUserDetails(
-                                firstName: data['firstName'] ?? '',
-                                lastName: data['lastName'] ?? '',
-                                email: data['email'] ?? '',
-                                contactNumber: data['contactNumber'] ?? '',
-                                profileId: data['profileId'] ?? '',
-                                roles: data['roles'] ?? [],
-                                godAdmin: data['god_admin'] ?? false,
-                              );
+                            final email = viewModel.emailController.text.trim();
+                            final password = viewModel.passwordController.text;
+                            viewModel.isLoading = true;
+                            viewModel.errorMessage = null;
+                            viewModel.notifyListeners();
+                            final success = await AuthUtils.login(email, password);
+                            viewModel.isLoading = false;
+                            viewModel.notifyListeners();
+                            if (success && context.mounted) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(
                                   builder: (_) => HomeTabbedScreen(),
                                 ),
                               );
+                            } else {
+                              viewModel.errorMessage = 'Invalid email or password';
+                              viewModel.notifyListeners();
                             }
                           },
                     child: viewModel.isLoading

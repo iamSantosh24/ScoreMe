@@ -2,17 +2,17 @@ const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const cors = require('cors');
+require('dotenv').config();
 
 const app = express();
 app.use(bodyParser.json());
+app.use(cors());
 
-// Connect to MongoDB
-mongoose.connect('mongodb://localhost:27017/scorer', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+mongoose.connect('mongodb://localhost:27017/scorer');
 
-// User Schema
+// User model
 const userSchema = new mongoose.Schema({
   firstName: { type: String, required: true },
   lastName: { type: String, required: true },
@@ -20,7 +20,7 @@ const userSchema = new mongoose.Schema({
   password: { type: String, required: true },
   contactNumber: { type: String },
   profileId: { type: String, required: true, unique: true },
-  god_admin: { type: Boolean, default: false }, // app-level permission
+  god_admin: { type: Boolean, default: false },
   roles: [
     {
       leagueId: { type: String },
@@ -33,10 +33,9 @@ const userSchema = new mongoose.Schema({
     },
   ],
 });
-
 const User = mongoose.model('User', userSchema);
 
-// League Schema
+// League model
 const leagueSchema = new mongoose.Schema({
   leagueId: { type: String, required: true, unique: true },
   leagueName: { type: String, required: true },
@@ -45,15 +44,16 @@ const leagueSchema = new mongoose.Schema({
     {
       teamId: { type: String },
       teamName: { type: String }
-      // Add more team fields as needed
     }
   ],
   status: { type: String, enum: ['scheduled', 'completed', 'ongoing'], default: 'scheduled' }
 });
-
 const League = mongoose.model('League', leagueSchema);
 
-// Helper to generate profileId
+// JWT secret
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
+
+// Helper to generate unique profileId
 function generateProfileId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let id = '';
@@ -70,7 +70,7 @@ function generateProfileId() {
   return id;
 }
 
-// Helper to generate leagueId
+// Helper to generate unique leagueId
 function generateLeagueId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let id = '';
@@ -87,7 +87,22 @@ function generateLeagueId() {
   return id;
 }
 
-// Registration endpoint
+// Middleware to authenticate user from JWT token
+async function getUserFromToken(req, res, next) {
+  const authHeader = req.headers['authorization'];
+  if (!authHeader) return res.status(401).json({ error: 'No authorization header.' });
+  const token = authHeader.replace('Bearer ', '');
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findOne({ email: decoded.email });
+    if (!user) return res.status(401).json({ error: 'Invalid token.' });
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Invalid or expired token.' });
+  }
+}
+
 app.post('/register', async (req, res) => {
   const { firstName, lastName, email, password, confirmPassword, contactNumber } = req.body;
   if (!firstName || !lastName || !email || !password || !confirmPassword) {
@@ -109,14 +124,13 @@ app.post('/register', async (req, res) => {
     password: hashedPassword,
     contactNumber,
     profileId,
-    god_admin: false, // default
-    roles: [{ leagueId: null, teamId: null, role: 'player' }], // default role
+    god_admin: false,
+    roles: [{ leagueId: null, teamId: null, role: 'player' }],
   });
   await user.save();
   res.status(201).json({ message: 'User registered successfully.', profileId });
 });
 
-// Login endpoint
 app.post('/login', async (req, res) => {
   const { email, password } = req.body;
   if (!email || !password) {
@@ -131,7 +145,7 @@ app.post('/login', async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-    // Success: return user details
+    const token = jwt.sign({ email: user.email }, JWT_SECRET, { expiresIn: '7d' });
     return res.status(200).json({
       firstName: user.firstName,
       lastName: user.lastName,
@@ -139,14 +153,14 @@ app.post('/login', async (req, res) => {
       contactNumber: user.contactNumber,
       profileId: user.profileId,
       roles: user.roles,
-      god_admin: user.god_admin
+      god_admin: user.god_admin,
+      token
     });
   } catch (err) {
     return res.status(500).json({ error: 'Server error.' });
   }
 });
 
-// Forgot Password endpoint
 app.post('/forgot-password', async (req, res) => {
   const { email } = req.body;
   if (!email) {
@@ -157,20 +171,16 @@ app.post('/forgot-password', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'No user found with this email.' });
     }
-    // Generate a temporary password (or token) and update user's password
     const tempPassword = Math.random().toString(36).slice(-8);
     user.password = bcrypt.hashSync(tempPassword, 10);
     await user.save();
-    // TODO: Send tempPassword to user's email (implement email sending logic)
-    // For now, just return the temp password in response (for testing)
     return res.status(200).json({ message: 'Password reset. Check your email for the new password.', tempPassword });
   } catch (err) {
     return res.status(500).json({ error: 'Server error.' });
   }
 });
 
-// Update user god_admin and/or role endpoint
-app.post('/update-user-role', async (req, res) => {
+app.post('/update-user-role', getUserFromToken, async (req, res) => {
   const { email, god_admin, role, leagueId, teamId } = req.body;
   if (!email) {
     return res.status(400).json({ error: 'Email is required.' });
@@ -186,7 +196,6 @@ app.post('/update-user-role', async (req, res) => {
       updatedFields.god_admin = god_admin;
     }
     if (role) {
-      // Update or add role for league/team context
       let found = false;
       if (leagueId || teamId) {
         for (let r of user.roles) {
@@ -200,7 +209,6 @@ app.post('/update-user-role', async (req, res) => {
           user.roles.push({ leagueId: leagueId || null, teamId: teamId || null, role });
         }
       } else {
-        // If no leagueId/teamId, update first role or add new
         if (user.roles.length > 0) {
           user.roles[0].role = role;
         } else {
@@ -218,7 +226,6 @@ app.post('/update-user-role', async (req, res) => {
   }
 });
 
-// Add League endpoint
 app.post('/add-league', async (req, res) => {
   const { leagueName, sport, teams, status } = req.body;
   if (!leagueName || !sport) {
@@ -227,7 +234,6 @@ app.post('/add-league', async (req, res) => {
   try {
     let leagueId;
     let existingLeague;
-    // Ensure unique leagueId
     do {
       leagueId = generateLeagueId();
       existingLeague = await League.findOne({ leagueId });
@@ -246,7 +252,6 @@ app.post('/add-league', async (req, res) => {
   }
 });
 
-// Fetch all leagues
 app.get('/leagues', async (req, res) => {
   try {
     const leagues = await League.find({});
@@ -256,7 +261,25 @@ app.get('/leagues', async (req, res) => {
   }
 });
 
-// Start server
+app.post('/validate-password', getUserFromToken, async (req, res) => {
+  const { oldPassword } = req.body;
+  if (!oldPassword || typeof oldPassword !== 'string') return res.status(400).json({ error: 'Old password required.' });
+  const valid = await bcrypt.compare(oldPassword, req.user.password);
+  return res.status(200).json({ valid });
+});
+
+app.post('/change-password', getUserFromToken, async (req, res) => {
+  const { newPassword } = req.body;
+  req.user.password = bcrypt.hashSync(newPassword, 10);
+  await req.user.save();
+  return res.status(200).json({ message: 'Password updated.' });
+});
+
+app.post('/delete-account', getUserFromToken, async (req, res) => {
+  await User.deleteOne({ email: req.user.email });
+  return res.status(200).json({ message: 'Account deleted.' });
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

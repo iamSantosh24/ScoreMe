@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'login_screen.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'shared_utils.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -12,78 +13,149 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String username = '';
-  String newUsername = '';
+  String oldPassword = '';
   String newPassword = '';
+  String confirmNewPassword = '';
   bool loading = false;
-  String error = '';
+  String passwordError = '';
+  String deleteError = '';
+  bool showPasswordFields = false;
+  bool showOldPasswordField = false;
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+
+  String get username => SharedUser.email ?? '';
+  String get profileId => SharedUser.profileId ?? '';
+  String get contactNumber => SharedUser.contactNumber ?? '';
 
   @override
   void initState() {
     super.initState();
-    loadUsername();
+    // Assume SharedUser is already populated elsewhere after login
   }
 
-  Future<void> loadUsername() async {
-    setState(() { loading = true; });
-    final savedUsername = await _secureStorage.read(key: 'auth_username') ?? '';
+  Future<bool> validateOldPassword(String oldPassword) async {
+    final token = await _secureStorage.read(key: 'auth_token') ?? '';
+    print('Validating password with token: $token');
+    final res = await http.post(
+      Uri.parse('http://192.168.1.134:3000/validate-password'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'oldPassword': oldPassword}),
+    );
+    if (res.statusCode == 200) {
+      return json.decode(res.body)['valid'] == true;
+    }
+    return false;
+  }
+
+  void startPasswordChange() {
+    setState(() { showOldPasswordField = true; passwordError = ''; });
+  }
+
+  void resetPasswordFlow() {
     setState(() {
-      username = savedUsername;
-      loading = false;
+      showOldPasswordField = false;
+      showPasswordFields = false;
+      passwordError = '';
+      oldPassword = '';
+      newPassword = '';
+      confirmNewPassword = '';
     });
   }
 
-  Future<void> changeUsername() async {
-    setState(() { loading = true; error = ''; });
-    final token = await _secureStorage.read(key: 'auth_token') ?? '';
-    final res = await http.post(
-      Uri.parse('http://localhost:3000/change-username'),
-      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
-      body: json.encode({'newUsername': newUsername}),
-    );
+  Future<void> submitOldPassword() async {
+    setState(() { loading = true; passwordError = ''; });
+    bool valid = await validateOldPassword(oldPassword);
     setState(() { loading = false; });
-    if (res.statusCode == 200) {
-      setState(() { username = newUsername; newUsername = ''; });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Username updated')));
+    if (valid) {
+      setState(() { showPasswordFields = true; showOldPasswordField = false; passwordError = ''; });
     } else {
-      setState(() { error = json.decode(res.body)['error'] ?? 'Failed to update username'; });
+      setState(() { passwordError = 'Old password is incorrect.'; });
     }
   }
 
+  bool get canUpdatePassword {
+    return newPassword.isNotEmpty &&
+      confirmNewPassword.isNotEmpty;
+  }
+
   Future<void> changePassword() async {
-    setState(() { loading = true; error = ''; });
+    setState(() { loading = true; passwordError = ''; });
+    if (newPassword.isEmpty || confirmNewPassword.isEmpty) {
+      setState(() { passwordError = 'Please enter both new password fields.'; loading = false; });
+      return;
+    }
+    if (newPassword != confirmNewPassword) {
+      setState(() { passwordError = 'New passwords do not match.'; loading = false; });
+      return;
+    }
+    if (newPassword == oldPassword) {
+      setState(() { passwordError = 'New password must be different from old password.'; loading = false; });
+      return;
+    }
     final token = await _secureStorage.read(key: 'auth_token') ?? '';
     final res = await http.post(
-      Uri.parse('http://localhost:3000/change-password'),
-      headers: {'Authorization': 'Bearer $token', 'Content-Type': 'application/json'},
+      Uri.parse('http://192.168.1.134:3000/change-password'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
       body: json.encode({'newPassword': newPassword}),
     );
     setState(() { loading = false; });
     if (res.statusCode == 200) {
-      setState(() { newPassword = ''; });
+      setState(() {
+        newPassword = '';
+        confirmNewPassword = '';
+        showPasswordFields = false;
+        showOldPasswordField = false;
+        passwordError = '';
+      });
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password updated')));
     } else {
-      setState(() { error = json.decode(res.body)['error'] ?? 'Failed to update password'; });
+      setState(() { passwordError = json.decode(res.body)['error'] ?? 'Failed to update password'; });
     }
   }
 
   Future<void> deleteAccount() async {
-    setState(() { loading = true; error = ''; });
+    bool confirmed = await showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Confirm Delete'),
+        content: const Text('Are you sure you want to delete your account? This action cannot be undone.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(true), child: const Text('Delete', style: TextStyle(color: Colors.red))),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    setState(() { loading = true; deleteError = ''; });
     final token = await _secureStorage.read(key: 'auth_token') ?? '';
     final res = await http.post(
-      Uri.parse('http://localhost:3000/delete-account'),
-      headers: {'Authorization': 'Bearer $token'},
+      Uri.parse('http://192.168.1.134:3000/delete-account'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
     );
     setState(() { loading = false; });
     if (res.statusCode == 200) {
+      SharedUser.clear();
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
       );
     } else {
-      setState(() { error = json.decode(res.body)['error'] ?? 'Failed to delete account'; });
+      setState(() { deleteError = json.decode(res.body)['error'] ?? 'Failed to delete account'; });
     }
+  }
+
+  @override
+  void dispose() {
+    resetPasswordFlow();
+    super.dispose();
   }
 
   @override
@@ -97,36 +169,70 @@ class _ProfileScreenState extends State<ProfileScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text('Profile Id: $profileId', style: const TextStyle(fontSize: 18)),
+                  const SizedBox(height: 8),
                   Text('Username: $username', style: const TextStyle(fontSize: 18)),
+                  const SizedBox(height: 8),
+                  Text('Contact Number: $contactNumber', style: const TextStyle(fontSize: 18)),
                   const SizedBox(height: 24),
-                  TextField(
-                    decoration: const InputDecoration(labelText: 'New Username (email)'),
-                    onChanged: (val) => newUsername = val,
-                  ),
-                  ElevatedButton(
-                    onPressed: changeUsername,
-                    child: const Text('Change Username'),
-                  ),
-                  const SizedBox(height: 24),
-                  TextField(
-                    decoration: const InputDecoration(labelText: 'New Password'),
-                    obscureText: true,
-                    onChanged: (val) => newPassword = val,
-                  ),
-                  ElevatedButton(
-                    onPressed: changePassword,
-                    child: const Text('Change Password'),
-                  ),
+                  if (!showOldPasswordField && !showPasswordFields)
+                    ElevatedButton(
+                      onPressed: startPasswordChange,
+                      child: const Text('Change Password'),
+                    ),
+                  if (showOldPasswordField) ...[
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Old Password'),
+                      obscureText: true,
+                      onChanged: (val) => oldPassword = val,
+                    ),
+                    ElevatedButton(
+                      onPressed: submitOldPassword,
+                      child: const Text('Next'),
+                    ),
+                    if (passwordError.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(passwordError, style: const TextStyle(color: Colors.red)),
+                      ),
+                  ],
+                  if (showPasswordFields) ...[
+                    const SizedBox(height: 16),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'New Password'),
+                      obscureText: true,
+                      onChanged: (val) {
+                        setState(() { newPassword = val; });
+                      },
+                    ),
+                    TextField(
+                      decoration: const InputDecoration(labelText: 'Confirm New Password'),
+                      obscureText: true,
+                      onChanged: (val) {
+                        setState(() { confirmNewPassword = val; });
+                      },
+                    ),
+                    ElevatedButton(
+                      onPressed: canUpdatePassword ? changePassword : null,
+                      child: const Text('Update Password'),
+                    ),
+                    if (passwordError.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: Text(passwordError, style: const TextStyle(color: Colors.red)),
+                      ),
+                  ],
                   const SizedBox(height: 24),
                   ElevatedButton(
                     style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
                     onPressed: deleteAccount,
                     child: const Text('Delete Account'),
                   ),
-                  if (error.isNotEmpty)
+                  if (deleteError.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(top: 16.0),
-                      child: Text(error, style: const TextStyle(color: Colors.red)),
+                      child: Text(deleteError, style: const TextStyle(color: Colors.red)),
                     ),
                 ],
               ),
