@@ -70,7 +70,7 @@ function generateProfileId() {
   return id;
 }
 
-add// Helper to generate leagueId
+// Helper to generate leagueId
 function generateLeagueId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let id = '';
