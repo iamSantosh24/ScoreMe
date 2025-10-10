@@ -50,11 +50,31 @@ const leagueSchema = new mongoose.Schema({
 });
 const League = mongoose.model('League', leagueSchema);
 
+const teamSchema = new mongoose.Schema({
+  teamId: {
+    type: String,
+    required: true,
+    unique: true,
+    default: () => new mongoose.Types.ObjectId().toString(),
+  },
+  teamName: {
+    type: String,
+    required: true,
+  },
+  players: {
+    type: [String], // List of player IDs or names
+    default: [],
+  },
+});
+// Ensure unique teamName per league (case-insensitive)
+teamSchema.index({ teamName: 1}, { unique: true, collation: { locale: 'en', strength: 2 } });
+const Team = mongoose.model('Team', teamSchema);
+
 // JWT secret
 const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
-// Helper to generate unique profileId
-function generateProfileId() {
+// Generic helper to generate unique IDs
+function generateUniqueId(type) {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let id = '';
   let hasLetter = false;
@@ -66,24 +86,7 @@ function generateProfileId() {
     if (/[0-9]/.test(c)) hasNumber = true;
   }
   // Ensure at least one letter and one number
-  if (!hasLetter || !hasNumber) return generateProfileId();
-  return id;
-}
-
-// Helper to generate unique leagueId
-function generateLeagueId() {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-  let id = '';
-  let hasLetter = false;
-  let hasNumber = false;
-  while (id.length < 7) {
-    const c = chars[Math.floor(Math.random() * chars.length)];
-    id += c;
-    if (/[A-Z]/.test(c)) hasLetter = true;
-    if (/[0-9]/.test(c)) hasNumber = true;
-  }
-  // Ensure at least one letter and one number
-  if (!hasLetter || !hasNumber) return generateLeagueId();
+  if (!hasLetter || !hasNumber) return generateUniqueId(type);
   return id;
 }
 
@@ -115,7 +118,7 @@ app.post('/register', async (req, res) => {
   if (existingUser) {
     return res.status(409).json({ error: 'Email already registered.' });
   }
-  const profileId = generateProfileId();
+  const profileId = generateUniqueId('profile');
   const hashedPassword = bcrypt.hashSync(password, 10);
   const user = new User({
     firstName,
@@ -235,7 +238,7 @@ app.post('/add-league', async (req, res) => {
     let leagueId;
     let existingLeague;
     do {
-      leagueId = generateLeagueId();
+      leagueId = generateUniqueId('league');
       existingLeague = await League.findOne({ leagueId });
     } while (existingLeague);
     const league = new League({
@@ -258,6 +261,41 @@ app.get('/leagues', async (req, res) => {
     res.status(200).json(leagues);
   } catch (err) {
     res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// Endpoint to fetch all teams
+app.get('/teams', async (req, res) => {
+  try {
+    const teams = await Team.find().collation({ locale: 'en', strength: 2 });
+    res.json(teams);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// Endpoint to create a new team
+app.post('/add-teams', async (req, res) => {
+  const { teamName, players } = req.body;
+  if (!teamName) {
+    return res.status(400).json({ error: 'Team name is required.' });
+  }
+  try {
+    // Check for duplicate teamName (case-insensitive)
+    const existingTeam = await Team.findOne({ teamName: teamName }).collation({ locale: 'en', strength: 2 });
+    if (existingTeam) {
+      return res.status(409).json({ error: 'A team with this name already exists.' });
+    }
+    const teamId = generateUniqueId('team');
+    const team = new Team({
+      teamId,
+      teamName,
+      players: Array.isArray(players) ? players : [],
+    });
+    await team.save();
+    return res.status(201).json({ message: 'Team created successfully.', team });
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to create team.' });
   }
 });
 

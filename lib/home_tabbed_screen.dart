@@ -4,6 +4,7 @@ import 'app_drawer.dart';
 import 'league_home_screen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
 import 'league_management_screen.dart';
+import 'team_management_screen.dart';
 import 'shared_utils.dart';
 
 class HomeTabbedScreen extends StatefulWidget {
@@ -33,7 +34,9 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
       role = 'player';
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<HomeTabbedViewModel>(context, listen: false).fetchLeagues();
+      final vm = Provider.of<HomeTabbedViewModel>(context, listen: false);
+      vm.fetchLeagues();
+      vm.fetchTeams();
     });
   }
 
@@ -94,6 +97,52 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
     );
   }
 
+  Widget _buildTeamsTab(HomeTabbedViewModel viewModel) {
+    return Column(
+      children: [
+        if (role == 'super_admin' || role == 'god_admin')
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const TeamManagementScreen(),
+                    ),
+                  );
+                },
+                child: const Text('Manage Teams'),
+              ),
+            ),
+          ),
+        Expanded(
+          child: viewModel.isLoadingTeams
+              ? const Center(child: CircularProgressIndicator())
+              : (viewModel.teamsError != null && viewModel.teamsError!.isNotEmpty)
+                  ? Center(child: Text(viewModel.teamsError!))
+                  : (viewModel.teams.isEmpty)
+                      ? const Center(child: Text('No teams found'))
+                      : ListView.builder(
+                          itemCount: viewModel.teams.length,
+                          itemBuilder: (context, index) {
+                            final team = viewModel.teams[index];
+                            return Card(
+                              margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                              child: ListTile(
+                                title: Text(team['teamName'] ?? 'Team'),
+                                // You can add navigation to a team details screen here if needed
+                              ),
+                            );
+                          },
+                        ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -116,7 +165,7 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
             children: [
               const Center(child: Text('No games to show.')), // My Games Tab
               _buildLeaguesTab(viewModel), // My Leagues Tab
-              const Center(child: Text('No teams to show.')), // My Teams Tab
+              _buildTeamsTab(viewModel), // My Teams Tab
             ],
           );
         },

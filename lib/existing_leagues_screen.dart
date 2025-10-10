@@ -1,41 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:provider/provider.dart';
+import 'package:scorer/viewmodels/ExistingLeaguesViewModel.dart';
 import 'update_teams_screen.dart';
 import 'set_league_rules_screen.dart';
 
-const String apiBaseUrl = 'http://192.168.1.134:3000';
-
-class ExistingLeaguesScreen extends StatefulWidget {
+class ExistingLeaguesScreen extends StatelessWidget {
   const ExistingLeaguesScreen({super.key});
-
-  @override
-  State<ExistingLeaguesScreen> createState() => _ExistingLeaguesScreenState();
-}
-
-class _ExistingLeaguesScreenState extends State<ExistingLeaguesScreen> {
-  List<Map<String, dynamic>> leagues = [];
-  bool isLoading = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchLeagues();
-  }
-
-  Future<void> _fetchLeagues() async {
-    setState(() { isLoading = true; });
-    final response = await http.get(Uri.parse('$apiBaseUrl/leagues'));
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        leagues = List<Map<String, dynamic>>.from(data);
-        isLoading = false;
-      });
-    } else {
-      setState(() { isLoading = false; });
-    }
-  }
 
   void _showLeagueOptions(BuildContext context, Map<String, dynamic> league) {
     showModalBottomSheet(
@@ -84,27 +54,38 @@ class _ExistingLeaguesScreenState extends State<ExistingLeaguesScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Existing Leagues')),
-      body: isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : leagues.isEmpty
-              ? const Center(child: Text('No leagues found.'))
-              : ListView.builder(
-                  itemCount: leagues.length,
-                  itemBuilder: (context, index) {
-                    final t = leagues[index];
-                    return ListTile(
-                      title: Text(t['name'] ?? ''),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          _showLeagueOptions(context, t);
+    return ChangeNotifierProvider(
+      create: (_) {
+        final vm = ExistingLeaguesViewModel();
+        vm.fetchLeagues();
+        return vm;
+      },
+      child: Consumer<ExistingLeaguesViewModel>(
+        builder: (context, vm, _) {
+          return Scaffold(
+            appBar: AppBar(title: const Text('Existing Leagues')),
+            body: vm.isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : vm.leagues.isEmpty
+                    ? const Center(child: Text('No leagues found.'))
+                    : ListView.builder(
+                        itemCount: vm.leagues.length,
+                        itemBuilder: (context, index) {
+                          final t = vm.leagues[index];
+                          return ListTile(
+                            title: Text(t['name'] ?? ''),
+                            trailing: ElevatedButton(
+                              onPressed: () {
+                                _showLeagueOptions(context, t);
+                              },
+                              child: const Text('Open'),
+                            ),
+                          );
                         },
-                        child: const Text('Open'),
                       ),
-                    );
-                  },
-                ),
+          );
+        },
+      ),
     );
   }
 }
