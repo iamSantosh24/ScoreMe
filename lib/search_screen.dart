@@ -157,7 +157,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => TeamHomeScreen(team: t, leagues: [], scheduledGames: [], role: role),
+                    builder: (_) => TeamHomeScreen(team: t),
                   ),
                 );
               },

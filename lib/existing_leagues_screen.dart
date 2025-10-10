@@ -73,7 +73,7 @@ class ExistingLeaguesScreen extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final t = vm.leagues[index];
                           return ListTile(
-                            title: Text(t['name'] ?? ''),
+                            title: Text(t['leagueName'] ?? ''),
                             trailing: ElevatedButton(
                               onPressed: () {
                                 _showLeagueOptions(context, t);

@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scorer/team_management_screen.dart';
+import 'package:scorer/team_players_screen.dart';
 import 'viewmodels/ExistingTeamsViewModel.dart';
+import 'team_home_screen.dart';
 
 class ExistingTeamsScreen extends StatelessWidget {
   const ExistingTeamsScreen({super.key});
@@ -27,10 +30,20 @@ class ExistingTeamsScreen extends StatelessWidget {
                             itemCount: viewModel.teams.length,
                             itemBuilder: (context, index) {
                               final team = viewModel.teams[index];
-                              return Card(
-                                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                child: ListTile(
-                                  title: Text(team['teamName'] ?? 'Team'),
+                              return ListTile(
+                                title: Text(team['teamName'] ?? 'Team'),
+                                trailing: ElevatedButton(
+                                  onPressed: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => TeamHomeScreen(
+                                          team: team
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                  child: const Text('Open'),
                                 ),
                               );
                             },

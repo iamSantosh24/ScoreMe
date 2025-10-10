@@ -1,35 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:scorer/update_teams_screen.dart';
+
 import 'viewmodels/TeamHomeViewModel.dart';
-import 'viewmodels/NotificationsViewModel.dart';
-import 'widgets/GameCard.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class TeamHomeScreen extends StatefulWidget {
   final Map<String, dynamic> team;
-  final List<dynamic> leagues;
-  final List<dynamic> scheduledGames;
-  final String role;
 
-  const TeamHomeScreen({super.key, required this.team, required this.leagues, required this.scheduledGames, required this.role});
+  const TeamHomeScreen({super.key, required this.team});
 
   @override
   State<TeamHomeScreen> createState() => _TeamHomeScreenState();
 }
 
-class _TeamHomeScreenState extends State<TeamHomeScreen> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
+class _TeamHomeScreenState extends State<TeamHomeScreen> with TickerProviderStateMixin {
+  late TabController _mainTabController;
+  late TabController _matchesTabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _mainTabController = TabController(length: 4, vsync: this);
+    _matchesTabController = TabController(length: 2, vsync: this);
   }
 
   @override
   void dispose() {
-    _tabController.dispose();
+    _mainTabController.dispose();
+    _matchesTabController.dispose();
     super.dispose();
   }
 
@@ -47,116 +44,95 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with SingleTickerProvid
       child: Scaffold(
         appBar: AppBar(
           title: Text(widget.team['name'] ?? 'Team'),
-        ),
-        body: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (widget.role == 'admin' || widget.role == 'super_admin' || widget.role == 'god_admin')
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: ElevatedButton(
-                    onPressed: () {
-                      var leagueId = widget.team['leagueId'];
-                      if (leagueId is List && leagueId.isNotEmpty) {
-                        leagueId = leagueId[0];
-                      }
-                      if (leagueId is! String) {
-                        leagueId = leagueId?.toString() ?? '';
-                      }
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => UpdateTeamsScreen(
-                            leagueId: leagueId,
-                            leagueName: widget.leagues.isNotEmpty ? (widget.leagues[0].name ?? '') : '',
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('Update Team Info'),
-                  ),
-                ),
-              Text('Leagues:', style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              ...widget.leagues.map((league) => Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2.0),
-                    child: Text(league.name ?? league.toString(), style: const TextStyle(fontSize: 15)),
-                  )),
-              const SizedBox(height: 16),
-              TabBar(
-                controller: _tabController,
-                tabs: const [
-                  Tab(text: 'Players'),
-                  Tab(text: 'Schedule'),
-                ],
-              ),
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    // Players Tab
-                    Consumer<TeamHomeViewModel>(
-                      builder: (context, vm, _) {
-                        if (vm.loading) {
-                          return const Center(child: CircularProgressIndicator());
-                        } else if (vm.error.isNotEmpty) {
-                          return Center(child: Text(vm.error, style: const TextStyle(color: Colors.red)));
-                        } else if (vm.teamMembers.isEmpty) {
-                          return const Center(child: Text('No players found'));
-                        } else {
-                          return ListView.builder(
-                            itemCount: vm.teamMembers.length,
-                            itemBuilder: (context, idx) {
-                              return ListTile(
-                                title: Text(vm.teamMembers[idx]),
-                              );
-                            },
-                          );
-                        }
-                      },
-                    ),
-                    // Schedule Tab
-                    widget.scheduledGames.isEmpty
-                        ? const Center(child: Text('No scheduled games found'))
-                        : ListView.builder(
-                            itemCount: widget.scheduledGames.length,
-                            itemBuilder: (context, idx) {
-                              final game = widget.scheduledGames[idx];
-                              return GameCard(game: game, variant: GameCardVariant.scheduled);
-                            },
-                          ),
-                  ],
-                ),
-              ),
-              if (widget.role == 'player')
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: ChangeNotifierProvider(
-                    create: (_) => NotificationsViewModel(),
-                    child: Consumer<NotificationsViewModel>(
-                      builder: (context, vm, _) {
-                        return ElevatedButton.icon(
-                          icon: const Icon(Icons.group_add),
-                          label: const Text('Request to Join Team'),
-                          onPressed: () async {
-                            final teamId = widget.team['_id'] ?? widget.team['id'];
-                            final teamName = widget.team['name'] ?? '';
-                            final storage = const FlutterSecureStorage();
-                            final userId = await storage.read(key: 'auth_username') ?? '';
-                            final success = await vm.sendJoinTeamRequest(userId, teamId, teamName);
-                            final snackMsg = success ? 'Request sent!' : (vm.error.isNotEmpty ? vm.error : 'Failed to send request');
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(snackMsg)),
-                            );
-                          },
-                        );
-                      },
-                    ),
-                  ),
-                ),
+          bottom: TabBar(
+            controller: _mainTabController,
+            tabs: const [
+              Tab(text: 'Players'),
+              Tab(text: 'Matches'),
+              Tab(text: 'Player Stats'),
+              Tab(text: 'Albums'),
             ],
           ),
         ),
+        body: TabBarView(
+          controller: _mainTabController,
+          children: [
+            // Players Tab
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Consumer<TeamHomeViewModel>(
+                builder: (context, vm, _) {
+                  if (vm.loading) {
+                    return const Center(child: CircularProgressIndicator());
+                  } else if (vm.error.isNotEmpty) {
+                    return Center(child: Text(vm.error, style: const TextStyle(color: Colors.red)));
+                  } else if (vm.teamMembers.isEmpty) {
+                    return const Center(child: Text('No players found'));
+                  } else {
+                    return ListView.builder(
+                      itemCount: vm.teamMembers.length,
+                      itemBuilder: (context, idx) {
+                        return ListTile(
+                          title: Text(vm.teamMembers[idx]),
+                        );
+                      },
+                    );
+                  }
+                },
+              ),
+            ),
+            // Matches Tab
+            Column(
+              children: [
+                TabBar(
+                  controller: _matchesTabController,
+                  tabs: const [
+                    Tab(text: 'Results'),
+                    Tab(text: 'Scheduled'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    controller: _matchesTabController,
+                    children: [
+                      Center(child: Text('Results - To be implemented')), // Placeholder
+                      Center(child: Text('Scheduled - To be implemented')), // Placeholder
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // Player Stats Tab
+            Center(child: Text('Player Stats - To be implemented')), // Placeholder
+            // Albums Tab
+            AlbumsTab(teamId: widget.team['_id'] ?? widget.team['id']),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// Albums Tab Widget
+class AlbumsTab extends StatelessWidget {
+  final String? teamId;
+  const AlbumsTab({Key? key, this.teamId}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          ElevatedButton(
+            onPressed: () {
+              // TODO: Implement file picker and upload logic
+            },
+            child: const Text('Upload Photo'),
+          ),
+          const SizedBox(height: 16),
+          const Text('Uploaded photos will appear here.'),
+        ],
       ),
     );
   }

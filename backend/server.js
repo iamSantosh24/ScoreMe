@@ -318,6 +318,23 @@ app.post('/delete-account', getUserFromToken, async (req, res) => {
   return res.status(200).json({ message: 'Account deleted.' });
 });
 
+// Endpoint to fetch team members by teamId
+app.get('/team-members/:teamId', async (req, res) => {
+  const { teamId } = req.params;
+  try {
+    const team = await Team.findOne({ teamId });
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found.' });
+    }
+    res.json({
+      teamName: team.teamName,
+      players: team.players
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch team members.' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
