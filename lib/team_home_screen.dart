@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import 'viewmodels/TeamHomeViewModel.dart';
 
 class TeamHomeScreen extends StatefulWidget {
@@ -35,7 +34,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with TickerProviderStat
     return ChangeNotifierProvider(
       create: (_) {
         final vm = TeamHomeViewModel();
-        final teamId = widget.team['_id'] ?? widget.team['id'];
+        final teamId = widget.team['teamId'];
         if (teamId != null) {
           vm.fetchTeamMembers(teamId);
         }
@@ -43,7 +42,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with TickerProviderStat
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(widget.team['name'] ?? 'Team'),
+          title: Text(widget.team['teamName'] ?? 'Team'),
           bottom: TabBar(
             controller: _mainTabController,
             tabs: const [
@@ -105,7 +104,7 @@ class _TeamHomeScreenState extends State<TeamHomeScreen> with TickerProviderStat
             // Player Stats Tab
             Center(child: Text('Player Stats - To be implemented')), // Placeholder
             // Albums Tab
-            AlbumsTab(teamId: widget.team['_id'] ?? widget.team['id']),
+            AlbumsTab(teamId: widget.team['teamId']),
           ],
         ),
       ),
