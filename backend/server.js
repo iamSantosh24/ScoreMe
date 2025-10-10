@@ -36,6 +36,23 @@ const userSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 
+// League Schema
+const leagueSchema = new mongoose.Schema({
+  leagueId: { type: String, required: true, unique: true },
+  leagueName: { type: String, required: true },
+  sport: { type: String, required: true, enum: ['throwball', 'cricket'] },
+  teams: [
+    {
+      teamId: { type: String },
+      teamName: { type: String }
+      // Add more team fields as needed
+    }
+  ],
+  status: { type: String, enum: ['scheduled', 'completed', 'ongoing'], default: 'scheduled' }
+});
+
+const League = mongoose.model('League', leagueSchema);
+
 // Helper to generate profileId
 function generateProfileId() {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
@@ -179,6 +196,31 @@ app.post('/update-user-role', async (req, res) => {
     }
     await user.save();
     return res.status(200).json({ message: 'User updated.', updatedFields, user });
+  } catch (err) {
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// Add League endpoint
+app.post('/add-league', async (req, res) => {
+  const { leagueId, leagueName, sport, teams, status } = req.body;
+  if (!leagueId || !leagueName || !sport) {
+    return res.status(400).json({ error: 'leagueId, leagueName, and sport are required.' });
+  }
+  try {
+    const existingLeague = await League.findOne({ leagueId });
+    if (existingLeague) {
+      return res.status(409).json({ error: 'League with this leagueId already exists.' });
+    }
+    const league = new League({
+      leagueId,
+      leagueName,
+      sport,
+      teams: teams || [],
+      status: status || 'scheduled'
+    });
+    await league.save();
+    return res.status(201).json({ message: 'League created successfully.', league });
   } catch (err) {
     return res.status(500).json({ error: 'Server error.' });
   }
