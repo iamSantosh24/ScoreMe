@@ -139,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (_) => LeagueHomeScreen(league: l, scheduledGames: []),
+                    builder: (_) => LeagueHomeScreen(league: l),
                   ),
                 );
               },

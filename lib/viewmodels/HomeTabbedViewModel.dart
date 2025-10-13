@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import '../models/league.dart';
 
 class HomeTabbedViewModel extends ChangeNotifier {
-  List<dynamic> leagues = [];
+  List<League> leagues = [];
   bool isLoadingLeagues = false;
   String? leaguesError;
 
@@ -18,7 +19,8 @@ class HomeTabbedViewModel extends ChangeNotifier {
     try {
       final response = await http.get(Uri.parse('http://192.168.1.134:3000/leagues'));
       if (response.statusCode == 200) {
-        leagues = List<Map<String, dynamic>>.from(json.decode(response.body));
+        final List<dynamic> data = json.decode(response.body);
+        leagues = data.map((item) => League.fromJson(item)).toList();
       } else {
         leaguesError = 'Failed to load leagues.';
       }

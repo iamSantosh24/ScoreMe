@@ -16,6 +16,7 @@ class LoginViewModel extends ChangeNotifier {
   String? errorMessage;
   bool rememberMe = false;
   bool obscurePassword = true;
+  bool credentialsLoaded = false;
 
   LoginViewModel() {
     _loadSavedCredentials();
@@ -28,8 +29,9 @@ class LoginViewModel extends ChangeNotifier {
       emailController.text = savedEmail;
       passwordController.text = savedPassword;
       rememberMe = true;
-      notifyListeners();
     }
+    credentialsLoaded = true;
+    notifyListeners();
   }
 
   void toggleRememberMe(bool? value) {
@@ -60,6 +62,9 @@ class LoginViewModel extends ChangeNotifier {
         if (rememberMe) {
           await secureStorage.write(key: 'saved_email', value: email);
           await secureStorage.write(key: 'saved_password', value: password);
+        } else {
+          await secureStorage.delete(key: 'saved_email');
+          await secureStorage.delete(key: 'saved_password');
         }
         SharedUser.setUserDetails(
           firstName: data['firstName'] ?? '',
@@ -92,4 +97,3 @@ class LoginViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

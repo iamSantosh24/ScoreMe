@@ -1,34 +1,4 @@
-class League {
-  final String id;
-  final String name;
-
-  League({required this.id, required this.name});
-
-  factory League.fromJson(Map<String, dynamic> json) {
-    return League(
-      id: json['leagueId'] ?? json['_id'] ?? json['id'] ?? '',
-      name: json['leagueName'] ?? json['name'] ?? '',
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-    };
-  }
-}
-
-// Utility to get League object from id (no formatting)
-League getLeagueFromId(String id) {
-  return League(id: id, name: id);
-}
-
-// Utility to build a list of League objects from backend ids (no formatting)
-List<League> buildLeaguesList(List<String> ids) {
-  return ids.map((id) => getLeagueFromId(id)).toList();
-}
-
+import 'models/league.dart';
 
 String monthName(int month) {
   const months = [

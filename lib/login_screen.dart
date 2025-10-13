@@ -4,7 +4,6 @@ import 'viewmodels/login_viewmodel.dart';
 import 'register_screen.dart';
 import 'home_tabbed_screen.dart';
 import 'forgot_password_screen.dart';
-import 'shared_utils.dart';
 import 'auth_utils.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -16,6 +15,9 @@ class LoginScreen extends StatelessWidget {
       create: (_) => LoginViewModel(),
       child: Consumer<LoginViewModel>(
         builder: (context, viewModel, _) {
+          if (!viewModel.credentialsLoaded) {
+            return const Center(child: CircularProgressIndicator());
+          }
           return Scaffold(
             appBar: AppBar(title: const Text('Login')),
             body: Padding(
@@ -61,15 +63,13 @@ class LoginScreen extends StatelessWidget {
                     onPressed: viewModel.isLoading
                         ? null
                         : () async {
-                            final email = viewModel.emailController.text.trim();
-                            final password = viewModel.passwordController.text;
                             viewModel.isLoading = true;
                             viewModel.errorMessage = null;
                             viewModel.notifyListeners();
-                            final success = await AuthUtils.login(email, password);
+                            final result = await viewModel.login();
                             viewModel.isLoading = false;
                             viewModel.notifyListeners();
-                            if (success && context.mounted) {
+                            if (result != null && context.mounted) {
                               Navigator.pushReplacement(
                                 context,
                                 MaterialPageRoute(

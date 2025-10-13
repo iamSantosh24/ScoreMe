@@ -6,12 +6,11 @@ import 'widgets/GameCard.dart';
 import 'match_results_screen.dart';
 import 'widgets/points_table_widget.dart';
 import 'widgets/player_stats_widget.dart';
-import 'widgets/rules_widget.dart';
+import 'models/league.dart';
 
 class LeagueHomeScreen extends StatefulWidget {
   final League league;
-  final List<dynamic> scheduledGames;
-  const LeagueHomeScreen({super.key, required this.league, required this.scheduledGames});
+  const LeagueHomeScreen({super.key, required this.league});
 
   @override
   State<LeagueHomeScreen> createState() => _LeagueHomeScreenState();
@@ -24,28 +23,28 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with TickerProvider
   @override
   void initState() {
     super.initState();
-    _mainTabController = TabController(length: 4, vsync: this);
+    _mainTabController = TabController(length: 3, vsync: this);
     _matchesTabController = TabController(length: 2, vsync: this);
   }
 
-  Widget buildScheduledTab() {
-    final leagueScheduledGames = widget.scheduledGames.where((game) {
-      // Adjust this property access if your game model uses a different field for league id
+  Widget buildScheduledTab(LeagueHomeViewModel vm) {
+    final scheduledGames = vm.scheduledGames?.where((game) {
       return game['leagueId'] == widget.league.id;
-    }).toList();
-    if (leagueScheduledGames.isEmpty) {
+    }).toList() ?? [];
+
+    if (scheduledGames.isEmpty) {
       return const Center(child: Text('No scheduled games found'));
     }
     return ListView.builder(
-      itemCount: leagueScheduledGames.length,
+      itemCount: scheduledGames.length,
       itemBuilder: (context, index) {
-        final game = leagueScheduledGames[index];
+        final game = scheduledGames[index];
         return GameCard(game: game, variant: GameCardVariant.scheduled);
       },
     );
   }
 
-  Widget buildMatchesTab() {
+  Widget buildMatchesTab(LeagueHomeViewModel vm) {
     return Column(
       children: [
         TabBar(
@@ -60,7 +59,7 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with TickerProvider
             controller: _matchesTabController,
             children: [
               MatchResultsScreen(league: widget.league.id),
-              buildScheduledTab(),
+              buildScheduledTab(vm),
             ],
           ),
         ),
@@ -97,10 +96,9 @@ class _LeagueHomeScreenState extends State<LeagueHomeScreen> with TickerProvider
             body: TabBarView(
               controller: _mainTabController,
               children: [
-                buildMatchesTab(),
+                buildMatchesTab(vm),
                 PointsTableWidget(leagueId: widget.league.id),
                 PlayerStatsWidget(),
-                RulesWidget(),
               ],
             ),
           );

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../leagues_util.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/league.dart';
 
 class LeagueHomeViewModel extends ChangeNotifier {
   final League league;
@@ -34,4 +35,3 @@ class LeagueHomeViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-

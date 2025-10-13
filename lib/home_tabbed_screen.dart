@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:scorer/league_home_screen.dart';
+import 'package:scorer/team_home_screen.dart';
 import 'app_drawer.dart';
-import 'league_home_screen.dart';
 import 'viewmodels/HomeTabbedViewModel.dart';
 import 'league_management_screen.dart';
 import 'team_management_screen.dart';
@@ -61,7 +62,10 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                     MaterialPageRoute(
                       builder: (_) => LeagueManagementScreen(),
                     ),
-                  );
+                  ).then((_) {
+                    final vm = Provider.of<HomeTabbedViewModel>(context, listen: false);
+                    vm.fetchLeagues();
+                  });
                 },
                 child: const Text('Manage League'),
               ),
@@ -81,11 +85,11 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                             return Card(
                               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               child: ListTile(
-                                title: Text(league['leagueName'] ?? 'League'),
+                                title: Text(league.name),
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => LeagueHomeScreen(league: league, scheduledGames: []),
+                                    builder: (_) => LeagueHomeScreen(league: league),
                                   ),
                                 ),
                               ),
@@ -112,7 +116,10 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                     MaterialPageRoute(
                       builder: (_) => const TeamManagementScreen(),
                     ),
-                  );
+                  ).then((_) {
+                    final vm = Provider.of<HomeTabbedViewModel>(context, listen: false);
+                    vm.fetchTeams();
+                  });
                 },
                 child: const Text('Manage Teams'),
               ),
@@ -133,7 +140,14 @@ class _HomeTabbedScreenState extends State<HomeTabbedScreen>
                               margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                               child: ListTile(
                                 title: Text(team['teamName'] ?? 'Team'),
-                                // You can add navigation to a team details screen here if needed
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => TeamHomeScreen(
+                                        team: team
+                                    ),
+                                  ),
+                                ),
                               ),
                             );
                           },
