@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:scorer/team_management_screen.dart';
-import 'package:scorer/team_players_screen.dart';
+import 'manage_team_players_screen.dart';
 import 'viewmodels/ExistingTeamsViewModel.dart';
 import 'team_home_screen.dart';
 
@@ -31,19 +30,44 @@ class ExistingTeamsScreen extends StatelessWidget {
                             itemBuilder: (context, index) {
                               final team = viewModel.teams[index];
                               return ListTile(
-                                title: Text(team['teamName'] ?? 'Team'),
-                                trailing: ElevatedButton(
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => TeamHomeScreen(
-                                          team: team
+                                title: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(team['teamName'] ?? 'Team', style: Theme.of(context).textTheme.titleMedium, maxLines: null),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => TeamHomeScreen(team: team),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Open'),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text('Open'),
+                                        const SizedBox(width: 8),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => ManageTeamPlayersScreen(
+                                                  teamId: team['teamId'],
+                                                  teamName: team['teamName'] ?? '',
+                                                  currentPlayers: team['players'] ?? [],
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                          child: const Text('Manage'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
                                 ),
                               );
                             },

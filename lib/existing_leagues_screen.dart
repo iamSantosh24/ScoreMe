@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:scorer/viewmodels/ExistingLeaguesViewModel.dart';
 import 'update_teams_screen.dart';
 import 'set_league_rules_screen.dart';
+import 'manage_league_teams_screen.dart';
 
 class ExistingLeaguesScreen extends StatelessWidget {
   const ExistingLeaguesScreen({super.key});
@@ -73,12 +74,43 @@ class ExistingLeaguesScreen extends StatelessWidget {
                         itemBuilder: (context, index) {
                           final t = vm.leagues[index];
                           return ListTile(
-                            title: Text(t['leagueName'] ?? ''),
-                            trailing: ElevatedButton(
-                              onPressed: () {
-                                _showLeagueOptions(context, t);
-                              },
-                              child: const Text('Open'),
+                            title: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  t['leagueName'] ?? '',
+                                  style: Theme.of(context).textTheme.titleMedium,
+                                  maxLines: null,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        _showLeagueOptions(context, t);
+                                      },
+                                      child: const Text('Open'),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) => ManageLeagueTeamsScreen(
+                                              leagueId: t['leagueId'],
+                                              leagueName: t['leagueName'] ?? '',
+                                              currentTeams: t['teams'] ?? [],
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      child: const Text('Manage'),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           );
                         },

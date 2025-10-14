@@ -335,6 +335,142 @@ app.get('/team-members/:teamId', async (req, res) => {
   }
 });
 
+// Endpoint to fetch full player details for all team members
+app.get('/team-members-details/:teamId', async (req, res) => {
+  const { teamId } = req.params;
+  try {
+    const team = await Team.findOne({ teamId });
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found.' });
+    }
+    // Fetch all users whose profileId is in team.players
+    const users = await User.find({ profileId: { $in: team.players } }, {
+      firstName: 1,
+      lastName: 1,
+      email: 1,
+      profileId: 1
+    });
+    // Sort users in the same order as team.players
+    const sortedUsers = team.players.map(pid => users.find(u => u.profileId === pid)).filter(Boolean);
+    res.json({
+      teamName: team.teamName,
+      players: sortedUsers
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch team member details.' });
+  }
+});
+
+// Unified endpoint for adding/removing team to/from league
+app.post('/league/:leagueId/team', async (req, res) => {
+  const { leagueId } = req.params;
+  const { action, teamId, teamName } = req.body;
+  if (!action || !teamId) {
+    return res.status(400).json({ error: 'action and teamId are required.' });
+  }
+  try {
+    const league = await League.findOne({ leagueId });
+    if (!league) {
+      return res.status(404).json({ error: 'League not found.' });
+    }
+    if (action === 'add') {
+      if (!teamName) {
+        return res.status(400).json({ error: 'teamName is required for adding.' });
+      }
+      // Check if teamId exists in any other league
+      const otherLeague = await League.findOne({
+        leagueId: { $ne: leagueId },
+        'teams.teamId': teamId
+      });
+      if (otherLeague) {
+        return res.status(409).json({ error: `This team is already assigned to another league: ${otherLeague.leagueName}.`, leagueName: otherLeague.leagueName });
+      }
+      if (league.teams.some(t => t.teamId === teamId)) {
+        return res.status(409).json({ error: 'Team already in league.' });
+      }
+      league.teams.push({ teamId, teamName });
+      await league.save();
+      return res.status(200).json({ message: 'Team added to league.', league });
+    } else if (action === 'remove') {
+      league.teams = league.teams.filter(t => t.teamId !== teamId);
+      await league.save();
+      return res.status(200).json({ message: 'Team removed from league.', league });
+    } else {
+      return res.status(400).json({ error: 'Invalid action.' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update league teams.' });
+  }
+});
+
+// Unified endpoint for adding/removing player to/from team
+app.post('/team/:teamId/player', async (req, res) => {
+  const { teamId } = req.params;
+  const { action, player } = req.body;
+  if (!action || !player) {
+    return res.status(400).json({ error: 'action and player are required.' });
+  }
+  try {
+    const team = await Team.findOne({ teamId });
+    if (!team) {
+      return res.status(404).json({ error: 'Team not found.' });
+    }
+    // Find the league containing this team
+    const league = await League.findOne({ 'teams.teamId': teamId });
+    if (!league) {
+      return res.status(404).json({ error: 'League not found for this team.' });
+    }
+    // Get all teamIds in this league except the current team
+    const otherTeamIds = league.teams.map(t => t.teamId).filter(id => id !== teamId);
+    // Check if player is already in any other team in the same league
+    const otherTeams = await Team.find({ teamId: { $in: otherTeamIds }, players: player });
+    if (action === 'add') {
+      if (otherTeams.length > 0) {
+        return res.status(409).json({ error: `Player is already assigned to another team in this league: ${otherTeams[0].teamName}.`, teamName: otherTeams[0].teamName });
+      }
+      if (team.players.includes(player)) {
+        return res.status(409).json({ error: 'Player already in team.' });
+      }
+      team.players.push(player);
+      await team.save();
+      return res.status(200).json({ message: 'Player added to team.', team });
+    } else if (action === 'remove') {
+      team.players = team.players.filter(p => p !== player);
+      await team.save();
+      return res.status(200).json({ message: 'Player removed from team.', team });
+    } else {
+      return res.status(400).json({ error: 'Invalid action.' });
+    }
+  } catch (err) {
+    return res.status(500).json({ error: 'Failed to update team players.' });
+  }
+});
+
+// Search players by first or last name
+app.get('/players', async (req, res) => {
+  const { search } = req.query;
+  if (!search || search.trim() === '') {
+    return res.status(400).json({ error: 'Search query required.' });
+  }
+  try {
+    const regex = new RegExp(search, 'i');
+    const users = await User.find({
+      $or: [
+        { firstName: regex },
+        { lastName: regex }
+      ]
+    }, { firstName: 1, lastName: 1, email: 1, profileId: 1 });
+    res.json(users.map(u => ({
+      profileId: u.profileId,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      email: u.email
+    })));
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to search players.' });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
