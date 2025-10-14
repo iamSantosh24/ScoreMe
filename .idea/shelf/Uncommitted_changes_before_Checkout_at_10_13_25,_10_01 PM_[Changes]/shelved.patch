@@ -1,0 +1,35 @@
+Index: .idea/libraries/Flutter_Plugins.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><component name=\"libraryTable\">\n  <library name=\"Flutter Plugins\" type=\"FlutterPluginsLibraryType\">\n    <CLASSES>\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.1.2\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider-2.1.5\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.2.1\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.2\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.2.4\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_android-2.2.18\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+1\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+4\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13\" />\n      <root url=\"file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker-1.2.0\" />\n    </CLASSES>\n    <JAVADOC />\n    <SOURCES />\n  </library>\n</component>
+===================================================================
+diff --git a/.idea/libraries/Flutter_Plugins.xml b/.idea/libraries/Flutter_Plugins.xml
+--- a/.idea/libraries/Flutter_Plugins.xml	(revision 48673903fa6200e63d6d66cf9cd4778bb547f6a6)
++++ b/.idea/libraries/Flutter_Plugins.xml	(date 1760417859690)
+@@ -1,25 +1,6 @@
+ <component name="libraryTable">
+   <library name="Flutter Plugins" type="FlutterPluginsLibraryType">
+-    <CLASSES>
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_secure_storage_windows-3.1.2" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider-2.1.5" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_windows-2.3.0" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_secure_storage_web-1.2.1" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_foundation-2.4.2" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/flutter_secure_storage-9.2.4" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_linux-2.2.1" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/path_provider_android-2.2.18" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/file_selector_linux-0.9.3+2" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_for_web-3.1.0" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_windows-0.2.2" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_linux-0.2.2" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_macos-0.2.2" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_android-0.8.13+1" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/file_selector_windows-0.9.3+4" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/file_selector_macos-0.9.4+4" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker_ios-0.8.13" />
+-      <root url="file://$USER_HOME$/.pub-cache/hosted/pub.dev/image_picker-1.2.0" />
+-    </CLASSES>
++    <CLASSES />
+     <JAVADOC />
+     <SOURCES />
+   </library>

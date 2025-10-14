@@ -1,0 +1,508 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AndroidLayouts">
+    <shared>
+      <config />
+    </shared>
+  </component>
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="NONE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="2fdad523-84c6-4765-acaf-fa985da420b6" name="Changes" comment="Revamping backend&#10;in the existing teams screen, you can add/remove players and the team roster is updated immediately&#10;in the manage&#10;adding the logic to not add same player to multiple teams in the same league" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Dart File" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="UPDATE_TYPE" value="REBASE" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 0
+}</component>
+  <component name="ProjectId" id="32WFnMu9tm9iliJ2C3SWbPD0dA8" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "DEBUGGABLE_DEVICE": "Pixel_8_Pro_API_33 [emulator-5554]",
+    "DEBUGGABLE_PROCESS": "com.CricScorer.scorer",
+    "DEBUGGER_ID": "Java",
+    "Flutter.main.dart.executor": "Run",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "SHOW_ALL_PROCESSES": "true",
+    "ToolWindow.Device Manager 2.ShowToolbar": "false",
+    "cf.first.check.clang-format": "false",
+    "cidr.known.project.marker": "true",
+    "com.google.services.firebase.aqiPopupShown": "true",
+    "dart.analysis.tool.window.visible": "false",
+    "git-widget-placeholder": "clean-main",
+    "io.flutter.reload.alreadyRun": "true",
+    "kotlin-language-version-configured": "true",
+    "settings.editor.selected.configurable": "project.propVCSSupport.DirectoryMappings",
+    "show.migrate.to.gradle.popup": "false"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="2fdad523-84c6-4765-acaf-fa985da420b6" name="Changes" comment="" />
+      <created>1757528597830</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1757528597830</updated>
+    </task>
+    <task id="LOCAL-00001" summary="Current Implementations:&#10;&#10;- user account creation and login validation using mongodb&#10;- have enough development for cricket&#10;- have enough development to show profile, search, log out options with their implementation&#10;- have My Games and My Leagues tab implemented showing the respective data from backend">
+      <option name="closed" value="true" />
+      <created>1759300036509</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1759300036509</updated>
+    </task>
+    <task id="LOCAL-00002" summary="Implemented the data population of all the tabs with respective cards">
+      <option name="closed" value="true" />
+      <created>1759384331584</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1759384331584</updated>
+    </task>
+    <task id="LOCAL-00003" summary="1.Sorting the list of games in My Games tab avoids any games that are past the current date&#10;2. Added the GameHomeScreen to show the game details with the two teams listed in tab format&#10;3. Teams will display the member list which is clickable and opens ProfileScreen for when logged in user is clicked on and opens PlayerProfileScreen for when other users are clicked on">
+      <option name="closed" value="true" />
+      <created>1759389537637</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1759389537637</updated>
+    </task>
+    <task id="LOCAL-00004" summary="1.Sorting the list of games in My Games tab avoids any games that are past the current date&#10;2. Added the GameHomeScreen to show the game details with the two teams listed in tab format&#10;3. Teams will display the member list which is clickable and opens ProfileScreen for when logged in user is clicked on and opens PlayerProfileScreen for when other users are clicked on">
+      <option name="closed" value="true" />
+      <created>1759434225720</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1759434225720</updated>
+    </task>
+    <task id="LOCAL-00005" summary="1. separated the business logic into the GameHomeViewModel from the GameHomeScreen">
+      <option name="closed" value="true" />
+      <created>1759436621002</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1759436621002</updated>
+    </task>
+    <task id="LOCAL-00006" summary="made the project consistent with snake case file naming convention">
+      <option name="closed" value="true" />
+      <created>1759437395159</created>
+      <option name="number" value="00006" />
+      <option name="presentableId" value="LOCAL-00006" />
+      <option name="project" value="LOCAL" />
+      <updated>1759437395159</updated>
+    </task>
+    <task id="LOCAL-00007" summary="Changes:&#10;Drawer menu customizations based on role from the backend">
+      <option name="closed" value="true" />
+      <created>1759476266973</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1759476266973</updated>
+    </task>
+    <task id="LOCAL-00008" summary="Changes:&#10;updated role changes logic">
+      <option name="closed" value="true" />
+      <created>1759481600210</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1759481600210</updated>
+    </task>
+    <task id="LOCAL-00009" summary="Changes:&#10;updated role changes logic to show the tab data accordingly">
+      <option name="closed" value="true" />
+      <created>1759807670452</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1759807670452</updated>
+    </task>
+    <task id="LOCAL-00010" summary="Changes:&#10;updated the games to only show current and future dates games">
+      <option name="closed" value="true" />
+      <created>1759811644731</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1759811644731</updated>
+    </task>
+    <task id="LOCAL-00011" summary="Changes:&#10;added an endpoint to fetch the results from the scheduledgames collection for status = &quot;completed&quot; and showing the data in the Results tab">
+      <option name="closed" value="true" />
+      <created>1759816537378</created>
+      <option name="number" value="00011" />
+      <option name="presentableId" value="LOCAL-00011" />
+      <option name="project" value="LOCAL" />
+      <updated>1759816537378</updated>
+    </task>
+    <task id="LOCAL-00012" summary="Changes:&#10;My Teams tab showing the data correctly in Scheduled tab">
+      <option name="closed" value="true" />
+      <created>1759817824127</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1759817824127</updated>
+    </task>
+    <task id="LOCAL-00013" summary="Changes:&#10;App Drawer having an entry point for live scoring&#10;Creating a live score screen to give an option to select League and displaying the upcoming scheduled games based on the role of the user">
+      <option name="closed" value="true" />
+      <created>1759865786521</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1759865786521</updated>
+    </task>
+    <task id="LOCAL-00014" summary="Changes:&#10;Added logic to navigate to the respective sports widget based on the sport value from the backend">
+      <option name="closed" value="true" />
+      <created>1759867068631</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1759867068631</updated>
+    </task>
+    <task id="LOCAL-00015" summary="Changes:&#10;calling openTossScreen once the league is opened and passing the necessary data">
+      <option name="closed" value="true" />
+      <created>1759870446964</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1759870446964</updated>
+    </task>
+    <task id="LOCAL-00016" summary="Changes:&#10;updating toss screen to show right toss choices for each sport">
+      <option name="closed" value="true" />
+      <created>1759872124617</created>
+      <option name="number" value="00016" />
+      <option name="presentableId" value="LOCAL-00016" />
+      <option name="project" value="LOCAL" />
+      <updated>1759872124617</updated>
+    </task>
+    <task id="LOCAL-00017" summary="Changes:&#10;updating the ui for the throwball_live_score.dart">
+      <option name="closed" value="true" />
+      <created>1759876646466</created>
+      <option name="number" value="00017" />
+      <option name="presentableId" value="LOCAL-00017" />
+      <option name="project" value="LOCAL" />
+      <updated>1759876646466</updated>
+    </task>
+    <task id="LOCAL-00018" summary="Changes:&#10;adding multiple tabs for the league home screen to show">
+      <option name="closed" value="true" />
+      <created>1759877945335</created>
+      <option name="number" value="00018" />
+      <option name="presentableId" value="LOCAL-00018" />
+      <option name="project" value="LOCAL" />
+      <updated>1759877945335</updated>
+    </task>
+    <task id="LOCAL-00019" summary="Changes:&#10;sorted and moved the code for each widget&#10;added logic for pointstables from the backend to show on the UI">
+      <option name="closed" value="true" />
+      <created>1759898628276</created>
+      <option name="number" value="00019" />
+      <option name="presentableId" value="LOCAL-00019" />
+      <option name="project" value="LOCAL" />
+      <updated>1759898628276</updated>
+    </task>
+    <task id="LOCAL-00020" summary="Changes:&#10;added an option for god_admin user to &quot;Create New League&quot;&#10;refactored tournament management screen to league management screen">
+      <option name="closed" value="true" />
+      <created>1759903727059</created>
+      <option name="number" value="00020" />
+      <option name="presentableId" value="LOCAL-00020" />
+      <option name="project" value="LOCAL" />
+      <updated>1759903727059</updated>
+    </task>
+    <task id="LOCAL-00021" summary="Changes:&#10;added a logic to get the list of leagues in Existing Leagues Screen">
+      <option name="closed" value="true" />
+      <created>1759904522849</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1759904522849</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Changes:&#10;added a logic to post the leagues data created from ui to the backend">
+      <option name="closed" value="true" />
+      <created>1759906279880</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1759906279880</updated>
+    </task>
+    <task id="LOCAL-00023" summary="Changes:&#10;added a logic to update the rules from the ui and post it in the backend">
+      <option name="closed" value="true" />
+      <created>1759906876903</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1759906876903</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Changes:&#10;added a logic to update the teams home screen from the ui and post it in the backend&#10;added logic to upload image for team logo">
+      <option name="closed" value="true" />
+      <created>1759910291505</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1759910291505</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Changes:&#10;Notifications implemented and updated in the backend">
+      <option name="closed" value="true" />
+      <created>1759953716572</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1759953716572</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Revamping backend&#10;moved all the backend call to Readme-server file for future references&#10;Registration screen backend and ui updated">
+      <option name="closed" value="true" />
+      <created>1760068661645</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1760068661645</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Revamping backend&#10;login ui and backend call updated&#10;the data fetched from the login call response is saved in shared util file&#10;login screen now gets Forgot Password?">
+      <option name="closed" value="true" />
+      <created>1760070021193</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1760070021193</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Revamping backend&#10;updated the backend to change the user role using the endpoint">
+      <option name="closed" value="true" />
+      <created>1760071367980</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1760071367980</updated>
+    </task>
+    <task id="LOCAL-00029" summary="Revamping backend&#10;updated the backend to add league to the backend">
+      <option name="closed" value="true" />
+      <created>1760073125527</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1760073125527</updated>
+    </task>
+    <task id="LOCAL-00030" summary="Revamping backend&#10;updated the codebase to include viewmodels for the business logic and just ui in the screens">
+      <option name="closed" value="true" />
+      <created>1760074123612</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1760074123612</updated>
+    </task>
+    <task id="LOCAL-00031" summary="Revamping backend&#10;added /add-league to add leagues to the leagues collection, and /leagues to fetch the leagues from the backend to show on the My Leagues screen to the backend code&#10;simplified/updated the home_tabbed_screen.dart">
+      <option name="closed" value="true" />
+      <created>1760077202873</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1760077202873</updated>
+    </task>
+    <task id="LOCAL-00032" summary="Revamping backend&#10;added a logic to generate a more readable leagueId&#10;updated the /add-league endpoint to not take in leagueId as an input from ui&#10;moved business logic from league_management_screen.dart to LeagueManagementViewModel.dart">
+      <option name="closed" value="true" />
+      <created>1760078823311</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1760078823311</updated>
+    </task>
+    <task id="LOCAL-00033" summary="Revamping backend&#10;fixing the backend code">
+      <option name="closed" value="true" />
+      <created>1760079229133</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1760079229133</updated>
+    </task>
+    <task id="LOCAL-00034" summary="Revamping backend&#10;using the shared_util file for the email, role instead of creating constructor arguments&#10;changing the name from &quot;username&quot; to &quot;email&quot;">
+      <option name="closed" value="true" />
+      <created>1760080418406</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1760080418406</updated>
+    </task>
+    <task id="LOCAL-00035" summary="Revamping backend&#10;added auth_utils that saves the new JWT token everytime after login that is used for other navigation flow&#10;cleaning the server.js">
+      <option name="closed" value="true" />
+      <created>1760127996228</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1760127996228</updated>
+    </task>
+    <task id="LOCAL-00036" summary="Revamping backend&#10;updated the /add-teams and /teams to the backend code&#10;modularized ui screens to move the business logics to viewmodel">
+      <option name="closed" value="true" />
+      <created>1760136151340</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1760136151340</updated>
+    </task>
+    <task id="LOCAL-00037" summary="Revamping backend&#10;updated UI for Existing team from the Manage Teams&#10;updated UI for Existing leagues from the Manage Leagues&#10;added endpoints for getting players from the team, getting teams in the backend code">
+      <option name="closed" value="true" />
+      <created>1760140266051</created>
+      <option name="number" value="00037" />
+      <option name="presentableId" value="LOCAL-00037" />
+      <option name="project" value="LOCAL" />
+      <updated>1760140266051</updated>
+    </task>
+    <task id="LOCAL-00038" summary="Revamping backend&#10;team home screen ui updated to show team name and players tab">
+      <option name="closed" value="true" />
+      <created>1760140717961</created>
+      <option name="number" value="00038" />
+      <option name="presentableId" value="LOCAL-00038" />
+      <option name="project" value="LOCAL" />
+      <updated>1760140717961</updated>
+    </task>
+    <task id="LOCAL-00039" summary="Revamping backend&#10;team home screen ui updated to show team name and players tab&#10;league home screen ui updated to show the required tab with some future implementations pending&#10;League management screen worked on to show the Create Leagues correctly and Existing leagues correctly&#10;created league.dart and team.dart &#10;login screen and view model worked on for correct implementation of Remember me">
+      <option name="closed" value="true" />
+      <created>1760383659680</created>
+      <option name="number" value="00039" />
+      <option name="presentableId" value="LOCAL-00039" />
+      <option name="project" value="LOCAL" />
+      <updated>1760383659680</updated>
+    </task>
+    <task id="LOCAL-00040" summary="Revamping backend&#10;in the existing teams screen, you can add/remove players and the team roster is updated immediately&#10;in the manage&#10;adding the logic to not add same player to multiple teams in the same league">
+      <option name="closed" value="true" />
+      <created>1760416519618</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1760416519618</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
+    <servers />
+  </component>
+  <component name="Vcs.Log.History.Properties">
+    <option name="COLUMN_ID_ORDER">
+      <list>
+        <option value="Default.Root" />
+        <option value="Default.Author" />
+        <option value="Default.Date" />
+        <option value="Default.Subject" />
+      </list>
+    </option>
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Changes:&#10;updating toss screen to show right toss choices for each sport" />
+    <MESSAGE value="Changes:&#10;updating the ui for the throwball_live_score.dart" />
+    <MESSAGE value="Changes:&#10;adding multiple tabs for the league home screen to show" />
+    <MESSAGE value="Changes:&#10;sorted and moved the code for each widget&#10;added logic for pointstables from the backend to show on the UI" />
+    <MESSAGE value="Changes:&#10;added an option for god_admin user to &quot;Create New League&quot;&#10;refactored tournament management screen to league management screen" />
+    <MESSAGE value="Changes:&#10;added a logic to get the list of leagues in Existing Leagues Screen" />
+    <MESSAGE value="Changes:&#10;added a logic to post the leagues data created from ui to the backend" />
+    <MESSAGE value="Changes:&#10;added a logic to update the rules from the ui and post it in the backend" />
+    <MESSAGE value="Changes:&#10;added a logic to update the teams home screen from the ui and post it in the backend&#10;added logic to upload image for team logo" />
+    <MESSAGE value="Changes:&#10;Notifications implemented and updated in the backend" />
+    <MESSAGE value="Revamping backend&#10;moved all the backend call to Readme-server file for future references&#10;Registration screen backend and ui updated" />
+    <MESSAGE value="Revamping backend&#10;login ui and backend call updated&#10;the data fetched from the login call response is saved in shared util file&#10;login screen now gets Forgot Password?" />
+    <MESSAGE value="Revamping backend&#10;updated the backend to change the user role using the endpoint" />
+    <MESSAGE value="Revamping backend&#10;updated the backend to add league to the backend" />
+    <MESSAGE value="Revamping backend&#10;updated the codebase to include viewmodels for the business logic and just ui in the screens" />
+    <MESSAGE value="Revamping backend&#10;added /add-league to add leagues to the leagues collection, and /leagues to fetch the leagues from the backend to show on the My Leagues screen to the backend code&#10;simplified/updated the home_tabbed_screen.dart" />
+    <MESSAGE value="Revamping backend&#10;added a logic to generate a more readable leagueId&#10;updated the /add-league endpoint to not take in leagueId as an input from ui&#10;moved business logic from league_management_screen.dart to LeagueManagementViewModel.dart" />
+    <MESSAGE value="Revamping backend&#10;fixing the backend code" />
+    <MESSAGE value="Revamping backend&#10;using the shared_util file for the email, role instead of creating constructor arguments&#10;changing the name from &quot;username&quot; to &quot;email&quot;" />
+    <MESSAGE value="Revamping backend&#10;added auth_utils that saves the new JWT token everytime after login that is used for other navigation flow&#10;cleaning the server.js" />
+    <MESSAGE value="Revamping backend&#10;updated the /add-teams and /teams to the backend code&#10;modularized ui screens to move the business logics to viewmodel" />
+    <MESSAGE value="Revamping backend&#10;updated UI for Existing team from the Manage Teams&#10;updated UI for Existing leagues from the Manage Leagues&#10;added endpoints for getting players from the team, getting teams in the backend code" />
+    <MESSAGE value="Revamping backend&#10;team home screen ui updated to show team name and players tab" />
+    <MESSAGE value="Revamping backend&#10;team home screen ui updated to show team name and players tab&#10;league home screen ui updated to show the required tab with some future implementations pending&#10;League management screen worked on to show the Create Leagues correctly and Existing leagues correctly&#10;created league.dart and team.dart &#10;login screen and view model worked on for correct implementation of Remember me" />
+    <MESSAGE value="Revamping backend&#10;in the existing teams screen, you can add/remove players and the team roster is updated immediately&#10;in the manage&#10;adding the logic to not add same player to multiple teams in the same league" />
+    <option name="LAST_COMMIT_MESSAGE" value="Revamping backend&#10;in the existing teams screen, you can add/remove players and the team roster is updated immediately&#10;in the manage&#10;adding the logic to not add same player to multiple teams in the same league" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>89</line>
+          <option name="timeStamp" value="7" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>90</line>
+          <option name="timeStamp" value="8" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>92</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>97</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>100</line>
+          <option name="timeStamp" value="11" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>99</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>101</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>104</line>
+          <option name="timeStamp" value="15" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>102</line>
+          <option name="timeStamp" value="16" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>103</line>
+          <option name="timeStamp" value="17" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="Dart">
+          <url>file://$PROJECT_DIR$/lib/game_home_screen.dart</url>
+          <line>106</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>
