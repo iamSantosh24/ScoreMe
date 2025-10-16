@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'viewmodels/NotificationsViewModel.dart';
-import 'viewmodels/HomeTabbedViewModel.dart';
+import 'app_providers.dart';
 import 'login_screen.dart';
 
-void main() => runApp(
-  MultiProvider(
-    providers: [
-      ChangeNotifierProvider(create: (_) => NotificationsViewModel()),
-      ChangeNotifierProvider(create: (_) => HomeTabbedViewModel()),
-    ],
-    child: const MyApp(),
-  ),
-);
+void main() {
+  runApp(
+    MultiProvider(
+      providers: appProviders,
+      child: const MyApp(),
+    ),
+  );
+}
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});

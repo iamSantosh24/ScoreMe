@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class MatchResultsScreen extends StatefulWidget {
   final String league;
@@ -22,7 +23,7 @@ class _MatchResultsScreenState extends State<MatchResultsScreen> {
 
   Future<List<dynamic>> fetchResults() async {
     final response = await http.get(
-      Uri.parse('http://192.168.1.134:3000/games/results?leagueId=${widget.league}')
+      Uri.parse('${Config.apiBaseUrl}/games/results?leagueId=${widget.league}')
     );
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

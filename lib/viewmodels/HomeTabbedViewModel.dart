@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 import '../models/league.dart';
 
 class HomeTabbedViewModel extends ChangeNotifier {
@@ -17,7 +18,7 @@ class HomeTabbedViewModel extends ChangeNotifier {
     leaguesError = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.134:3000/leagues'));
+      final response = await http.get(Uri.parse('${Config.apiBaseUrl}/leagues'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         leagues = data.map((item) => League.fromJson(item)).toList();
@@ -37,7 +38,7 @@ class HomeTabbedViewModel extends ChangeNotifier {
     teamsError = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.134:3000/teams'));
+      final response = await http.get(Uri.parse('${Config.apiBaseUrl}/teams'));
       if (response.statusCode == 200) {
         teams = List<Map<String, dynamic>>.from(json.decode(response.body));
       } else {

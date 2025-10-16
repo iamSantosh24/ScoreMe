@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 
 class ManageLeagueTeamsViewModel extends ChangeNotifier {
   final String leagueId;
@@ -21,7 +22,7 @@ class ManageLeagueTeamsViewModel extends ChangeNotifier {
   Future<void> fetchAllTeams() async {
     isLoading = true;
     notifyListeners();
-    final response = await http.get(Uri.parse('http://192.168.1.134:3000/teams'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/teams'));
     if (response.statusCode == 200) {
       allTeams = jsonDecode(response.body);
       isLoading = false;
@@ -35,7 +36,7 @@ class ManageLeagueTeamsViewModel extends ChangeNotifier {
 
   Future<String?> handleTeamAction(String teamId, String teamName, bool add) async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.134:3000/league/$leagueId/team'),
+      Uri.parse('${Config.apiBaseUrl}/league/$leagueId/team'),
       body: jsonEncode({
         'action': add ? 'add' : 'remove',
         'teamId': teamId,
@@ -65,4 +66,3 @@ class ManageLeagueTeamsViewModel extends ChangeNotifier {
     }
   }
 }
-

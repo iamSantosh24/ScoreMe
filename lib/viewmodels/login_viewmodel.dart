@@ -2,10 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
+import 'package:scorer/config.dart';
 import '../shared_utils.dart';
 import '../home_tabbed_screen.dart';
-
-const String apiBaseUrl = 'http://192.168.1.134:3000';
 
 class LoginViewModel extends ChangeNotifier {
   final TextEditingController emailController = TextEditingController();
@@ -52,7 +51,7 @@ class LoginViewModel extends ChangeNotifier {
     final password = passwordController.text;
     try {
       final response = await http.post(
-        Uri.parse('$apiBaseUrl/login'),
+        Uri.parse('${Config.apiBaseUrl}/login'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'email': email, 'password': password}),
       );

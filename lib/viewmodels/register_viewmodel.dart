@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class RegisterViewModel extends ChangeNotifier {
   final TextEditingController firstNameController = TextEditingController();
@@ -27,7 +28,7 @@ class RegisterViewModel extends ChangeNotifier {
     final contactNumber = contactNumberController.text.trim();
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.134:3000/register'),
+        Uri.parse('${Config.apiBaseUrl}/register'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'email': email,
@@ -67,4 +68,3 @@ class RegisterViewModel extends ChangeNotifier {
     super.dispose();
   }
 }
-

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 
 class ExistingTeamsViewModel extends ChangeNotifier {
   bool isLoading = true;
@@ -12,7 +13,7 @@ class ExistingTeamsViewModel extends ChangeNotifier {
     error = null;
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.134:3000/teams'));
+      final response = await http.get(Uri.parse('${Config.apiBaseUrl}/teams'));
       if (response.statusCode == 200) {
         teams = json.decode(response.body);
       } else {
@@ -26,4 +27,3 @@ class ExistingTeamsViewModel extends ChangeNotifier {
     }
   }
 }
-

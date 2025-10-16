@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class MatchScheduleViewModel extends ChangeNotifier {
   List<dynamic> scheduledGames = [];
@@ -19,14 +20,13 @@ class MatchScheduleViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-
   Future<void> fetchScheduledGames(String leagueId) async {
     loading = true;
     error = '';
     notifyListeners();
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.134:3000/league/scheduled-games?leagueId=$leagueId'),
+        Uri.parse('${Config.apiBaseUrl}/league/scheduled-games?leagueId=$leagueId'),
       );
       if (res.statusCode == 200) {
         final data = json.decode(res.body);
@@ -42,4 +42,3 @@ class MatchScheduleViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-

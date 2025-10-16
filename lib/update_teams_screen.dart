@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:scorer/config.dart';
 
 class UpdateTeamsScreen extends StatefulWidget {
   final String leagueId;
@@ -33,7 +34,7 @@ class _UpdateTeamsScreenState extends State<UpdateTeamsScreen> {
       setState(() { isLoading = false; });
       return;
     }
-    final response = await http.get(Uri.parse('http://192.168.1.134:3000/teams/list'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/teams/list'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final team = (data['teams'] as List).firstWhere(
@@ -115,7 +116,7 @@ class _UpdateTeamsScreenState extends State<UpdateTeamsScreen> {
       'leagueId': widget.leagueId,
     };
     final response = await http.put(
-      Uri.parse('http://192.168.1.134:3000/teams/${widget.teamId ?? ''}'),
+      Uri.parse('${Config.apiBaseUrl}/teams/${widget.teamId ?? ''}'),
       headers: { 'Content-Type': 'application/json' },
       body: json.encode(body),
     );

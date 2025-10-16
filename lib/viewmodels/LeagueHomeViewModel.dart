@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../leagues_util.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 import '../models/league.dart';
 
 class LeagueHomeViewModel extends ChangeNotifier {
@@ -20,7 +21,7 @@ class LeagueHomeViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.134:3000/league/scheduled-games?leagueId=${league.id}'),
+        Uri.parse('${Config.apiBaseUrl}/league/scheduled-games?leagueId=${league.id}'),
       );
       if (res.statusCode == 200) {
         final data = json.decode(res.body);

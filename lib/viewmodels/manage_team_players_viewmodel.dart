@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 
 class ManageTeamPlayersViewModel extends ChangeNotifier {
   List<dynamic> searchResults = [];
@@ -8,7 +9,7 @@ class ManageTeamPlayersViewModel extends ChangeNotifier {
   bool isSearching = false;
 
   Future<void> fetchTeamPlayers(String teamId) async {
-    final response = await http.get(Uri.parse('http://192.168.1.134:3000/team-members-details/$teamId'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/team-members-details/$teamId'));
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final playerObjs = data['players'] ?? [];
@@ -20,7 +21,7 @@ class ManageTeamPlayersViewModel extends ChangeNotifier {
   Future<void> searchPlayers(String query) async {
     isSearching = true;
     notifyListeners();
-    final response = await http.get(Uri.parse('http://192.168.1.134:3000/players?search=$query'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/players?search=$query'));
     if (response.statusCode == 200) {
       searchResults = jsonDecode(response.body);
     } else {
@@ -40,7 +41,7 @@ class ManageTeamPlayersViewModel extends ChangeNotifier {
       return 'Player is already in this team.';
     }
     final response = await http.post(
-      Uri.parse('http://192.168.1.134:3000/team/$teamId/player'),
+      Uri.parse('${Config.apiBaseUrl}/team/$teamId/player'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'action': 'add',
@@ -63,7 +64,7 @@ class ManageTeamPlayersViewModel extends ChangeNotifier {
 
   Future<String?> removePlayerFromTeam(String teamId, String playerId) async {
     final response = await http.post(
-      Uri.parse('http://192.168.1.134:3000/team/$teamId/player'),
+      Uri.parse('${Config.apiBaseUrl}/team/$teamId/player'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({
         'action': 'remove',
@@ -84,4 +85,3 @@ class ManageTeamPlayersViewModel extends ChangeNotifier {
     }
   }
 }
-

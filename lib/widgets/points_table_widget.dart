@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class PointsTableWidget extends StatefulWidget {
   final String leagueId;
@@ -20,7 +21,7 @@ class _PointsTableWidgetState extends State<PointsTableWidget> {
   }
 
   Future<List<Map<String, dynamic>>> fetchPointsTable(String leagueId) async {
-    final url = 'http://192.168.1.134:3000/leagues/$leagueId/points-table'; // fixed double slash
+    final url = '${Config.apiBaseUrl}/leagues/$leagueId/points-table';
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

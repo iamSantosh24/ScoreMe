@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../shared_utils.dart';
 import '../login_screen.dart';
+import 'package:scorer/config.dart';
 
 class ProfileViewModel extends ChangeNotifier {
   String oldPassword = '';
@@ -23,7 +24,7 @@ class ProfileViewModel extends ChangeNotifier {
   Future<bool> validateOldPassword(String oldPassword) async {
     final token = await _secureStorage.read(key: 'auth_token') ?? '';
     final res = await http.post(
-      Uri.parse('http://192.168.1.134:3000/validate-password'),
+      Uri.parse('${Config.apiBaseUrl}/validate-password'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -96,7 +97,7 @@ class ProfileViewModel extends ChangeNotifier {
     }
     final token = await _secureStorage.read(key: 'auth_token') ?? '';
     final res = await http.post(
-      Uri.parse('http://192.168.1.134:3000/change-password'),
+      Uri.parse('${Config.apiBaseUrl}/change-password'),
       headers: {
         'Authorization': 'Bearer $token',
         'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ class ProfileViewModel extends ChangeNotifier {
     notifyListeners();
     final token = await _secureStorage.read(key: 'auth_token') ?? '';
     final res = await http.post(
-      Uri.parse('http://192.168.1.134:3000/delete-account'),
+      Uri.parse('${Config.apiBaseUrl}/delete-account'),
       headers: {
         'Authorization': 'Bearer $token',
       },
@@ -155,4 +156,3 @@ class ProfileViewModel extends ChangeNotifier {
     }
   }
 }
-

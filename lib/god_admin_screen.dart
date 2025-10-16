@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class GodAdminScreen extends StatefulWidget {
   @override
@@ -19,7 +20,7 @@ class _GodAdminScreenState extends State<GodAdminScreen> {
   }
 
   Future<void> fetchUsers() async {
-    final response = await http.get(Uri.parse('http://localhost:3000/users'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/users'));
     if (response.statusCode == 200) {
       setState(() {
         users = json.decode(response.body)['users'];
@@ -29,7 +30,7 @@ class _GodAdminScreenState extends State<GodAdminScreen> {
 
   Future<void> grantSuperAdmin(String username) async {
     final response = await http.post(
-      Uri.parse('http://localhost:3000/grant-super-admin'),
+      Uri.parse('${Config.apiBaseUrl}/grant-super-admin'),
       headers: {'Authorization': 'Bearer YOUR_GOD_ADMIN_TOKEN', 'Content-Type': 'application/json'},
       body: json.encode({'username': username}),
     );
@@ -73,4 +74,3 @@ class _GodAdminScreenState extends State<GodAdminScreen> {
     );
   }
 }
-

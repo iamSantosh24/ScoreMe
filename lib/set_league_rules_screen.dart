@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 import 'dart:convert';
 
 class ThrowballRulesWidget extends StatelessWidget {
@@ -103,7 +104,7 @@ class _SetLeagueRulesScreenState extends State<SetLeagueRulesScreen> {
 
   Future<void> _fetchLeagueData() async {
     setState(() { isLoading = true; });
-    final response = await http.get(Uri.parse('http://192.168.1.134:3000/leagues'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/leagues'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       final league = (data as List).firstWhere((l) => l['_id'] == widget.leagueId, orElse: () => null);
@@ -144,7 +145,7 @@ class _SetLeagueRulesScreenState extends State<SetLeagueRulesScreen> {
       };
     }
     final response = await http.put(
-      Uri.parse('http://192.168.1.134:3000/leagues/${widget.leagueId}/rules'),
+      Uri.parse('${Config.apiBaseUrl}/leagues/${widget.leagueId}/rules'),
       headers: { 'Content-Type': 'application/json' },
       body: json.encode({ 'rules': updatedRules }),
     );

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class PermissionRequest {
   final String id;
@@ -38,7 +39,7 @@ class NotificationsViewModel extends ChangeNotifier {
     error = '';
     notifyListeners();
     try {
-      final response = await http.get(Uri.parse('http://192.168.1.134:3000/api/permission-requests'));
+      final response = await http.get(Uri.parse('${Config.apiBaseUrl}/api/permission-requests'));
       if (response.statusCode == 200) {
         final List data = json.decode(response.body);
         requests = data.map((e) => PermissionRequest(
@@ -61,7 +62,7 @@ class NotificationsViewModel extends ChangeNotifier {
   Future<void> updateRequestStatus(String id, String newStatus) async {
     try {
       final response = await http.patch(
-        Uri.parse('http://192.168.1.134:3000/permission-requests/$id'),
+        Uri.parse('${Config.apiBaseUrl}/permission-requests/$id'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({'status': newStatus}),
       );
@@ -86,7 +87,7 @@ class NotificationsViewModel extends ChangeNotifier {
   Future<bool> sendPermissionRequest(String requesterId, String requestType, String targetName) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.134:3000/permission-requests'),
+        Uri.parse('${Config.apiBaseUrl}/permission-requests'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'requesterId': requesterId,
@@ -105,7 +106,7 @@ class NotificationsViewModel extends ChangeNotifier {
   Future<bool> sendJoinTeamRequest(String requesterId, String teamId, String teamName) async {
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.134:3000/permission-requests'),
+        Uri.parse('${Config.apiBaseUrl}/permission-requests'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'requesterId': requesterId,

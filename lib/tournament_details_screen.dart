@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 
 class TournamentDetailsScreen extends StatefulWidget {
   final String tournamentName;
@@ -26,7 +27,7 @@ class _TournamentDetailsScreenState extends State<TournamentDetailsScreen> {
     final teamName = _teamNameController.text.trim();
     if (teamName.isNotEmpty && !teams.contains(teamName)) {
       final response = await http.post(
-        Uri.parse('http://192.168.1.134:3000/teams'),
+        Uri.parse('${Config.apiBaseUrl}/teams'),
         headers: {'Content-Type': 'application/json'},
         body: '{"name":"$teamName","tournamentId":"${widget.tournamentId}"}',
       );

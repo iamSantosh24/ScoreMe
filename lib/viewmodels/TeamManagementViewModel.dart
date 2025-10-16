@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 
 class TeamManagementViewModel extends ChangeNotifier {
   bool isLoading = false;
@@ -14,7 +15,7 @@ class TeamManagementViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       final response = await http.post(
-        Uri.parse('http://192.168.1.134:3000/add-teams'),
+        Uri.parse('${Config.apiBaseUrl}/add-teams'),
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'teamName': teamName,
@@ -34,4 +35,3 @@ class TeamManagementViewModel extends ChangeNotifier {
     }
   }
 }
-

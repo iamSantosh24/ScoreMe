@@ -255,6 +255,27 @@ app.post('/add-league', async (req, res) => {
   }
 });
 
+// Endpoint to fetch all teams
+app.get('/teams', async (req, res) => {
+  try {
+    const teams = await Team.find().collation({ locale: 'en', strength: 2 });
+    res.json(teams);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// Alias for frontend expecting /api/teams
+app.get('/api/teams', async (req, res) => {
+  try {
+    const teams = await Team.find().collation({ locale: 'en', strength: 2 });
+    res.json(teams);
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to fetch teams' });
+  }
+});
+
+// Existing leagues endpoint
 app.get('/leagues', async (req, res) => {
   try {
     const leagues = await League.find({});
@@ -264,13 +285,13 @@ app.get('/leagues', async (req, res) => {
   }
 });
 
-// Endpoint to fetch all teams
-app.get('/teams', async (req, res) => {
+// Alias for frontend expecting /api/leagues
+app.get('/api/leagues', async (req, res) => {
   try {
-    const teams = await Team.find().collation({ locale: 'en', strength: 2 });
-    res.json(teams);
+    const leagues = await League.find({});
+    res.status(200).json(leagues);
   } catch (err) {
-    res.status(500).json({ error: 'Failed to fetch teams' });
+    res.status(500).json({ error: 'Server error.' });
   }
 });
 
@@ -361,113 +382,239 @@ app.get('/team-members-details/:teamId', async (req, res) => {
   }
 });
 
-// Unified endpoint for adding/removing team to/from league
-app.post('/league/:leagueId/team', async (req, res) => {
-  const { leagueId } = req.params;
-  const { action, teamId, teamName } = req.body;
-  if (!action || !teamId) {
-    return res.status(400).json({ error: 'action and teamId are required.' });
-  }
+// --- Added API endpoints for user search and role assignment ---
+
+// GET /api/users?search=...  -- returns simple user list for UI search
+app.get('/api/users', async (req, res) => {
   try {
-    const league = await League.findOne({ leagueId });
-    if (!league) {
-      return res.status(404).json({ error: 'League not found.' });
+    const { search } = req.query;
+    let filter = {};
+    if (search && typeof search === 'string' && search.trim() !== '') {
+      const q = search.trim();
+      const re = new RegExp(q, 'i');
+      filter = {
+        $or: [
+          { firstName: re },
+          { lastName: re },
+          { email: re },
+          { profileId: re }
+        ]
+      };
     }
-    if (action === 'add') {
-      if (!teamName) {
-        return res.status(400).json({ error: 'teamName is required for adding.' });
-      }
-      // Check if teamId exists in any other league
-      const otherLeague = await League.findOne({
-        leagueId: { $ne: leagueId },
-        'teams.teamId': teamId
-      });
-      if (otherLeague) {
-        return res.status(409).json({ error: `This team is already assigned to another league: ${otherLeague.leagueName}.`, leagueName: otherLeague.leagueName });
-      }
-      if (league.teams.some(t => t.teamId === teamId)) {
-        return res.status(409).json({ error: 'Team already in league.' });
-      }
-      league.teams.push({ teamId, teamName });
-      await league.save();
-      return res.status(200).json({ message: 'Team added to league.', league });
-    } else if (action === 'remove') {
-      league.teams = league.teams.filter(t => t.teamId !== teamId);
-      await league.save();
-      return res.status(200).json({ message: 'Team removed from league.', league });
-    } else {
-      return res.status(400).json({ error: 'Invalid action.' });
-    }
+    // Limit results to avoid huge payloads
+    const users = await User.find(filter).limit(50).select('firstName lastName email profileId');
+    const mapped = users.map(u => ({
+      _id: u._id,
+      username: u.email || u.profileId,
+      displayName: `${u.firstName || ''}${u.lastName ? ' ' + u.lastName : ''}`.trim(),
+      email: u.email,
+      profileId: u.profileId
+    }));
+    res.json(mapped);
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to update league teams.' });
+    console.error('GET /api/users error', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
   }
 });
 
-// Unified endpoint for adding/removing player to/from team
-app.post('/team/:teamId/player', async (req, res) => {
-  const { teamId } = req.params;
-  const { action, player } = req.body;
-  if (!action || !player) {
-    return res.status(400).json({ error: 'action and player are required.' });
-  }
+// GET /api/users/:id  -- return full user document (includes roles and god_admin)
+app.get('/api/users/:id', async (req, res) => {
   try {
-    const team = await Team.findOne({ teamId });
-    if (!team) {
-      return res.status(404).json({ error: 'Team not found.' });
+    const { id } = req.params;
+    // Try to find by Mongo ObjectId first; if not found, try by profileId/email
+    let user = null;
+    try {
+      user = await User.findById(id);
+    } catch (e) {
+      // ignore invalid ObjectId parse errors and try other lookups
     }
-    // Find the league containing this team
-    const league = await League.findOne({ 'teams.teamId': teamId });
-    if (!league) {
-      return res.status(404).json({ error: 'League not found for this team.' });
+
+    if (!user) {
+      user = await User.findOne({ $or: [{ profileId: id }, { email: id }] });
     }
-    // Get all teamIds in this league except the current team
-    const otherTeamIds = league.teams.map(t => t.teamId).filter(id => id !== teamId);
-    // Check if player is already in any other team in the same league
-    const otherTeams = await Team.find({ teamId: { $in: otherTeamIds }, players: player });
-    if (action === 'add') {
-      if (otherTeams.length > 0) {
-        return res.status(409).json({ error: `Player is already assigned to another team in this league: ${otherTeams[0].teamName}.`, teamName: otherTeams[0].teamName });
-      }
-      if (team.players.includes(player)) {
-        return res.status(409).json({ error: 'Player already in team.' });
-      }
-      team.players.push(player);
-      await team.save();
-      return res.status(200).json({ message: 'Player added to team.', team });
-    } else if (action === 'remove') {
-      team.players = team.players.filter(p => p !== player);
-      await team.save();
-      return res.status(200).json({ message: 'Player removed from team.', team });
-    } else {
-      return res.status(400).json({ error: 'Invalid action.' });
-    }
+
+    if (!user) return res.status(404).json({ error: 'User not found.' });
+    // Return the full document (be mindful of sensitive fields in production)
+    res.json(user);
   } catch (err) {
-    return res.status(500).json({ error: 'Failed to update team players.' });
+    console.error('GET /api/users/:id error', err);
+    res.status(500).json({ error: 'Failed to fetch user' });
   }
 });
 
-// Search players by first or last name
-app.get('/players', async (req, res) => {
-  const { search } = req.query;
-  if (!search || search.trim() === '') {
-    return res.status(400).json({ error: 'Search query required.' });
-  }
+// POST /api/assign-role
+// Body: { userId, role: 'admin'|'super_admin', teamId?, leagueId? }
+// Requires authentication. Performs basic authorization checks.
+app.post('/api/assign-role', getUserFromToken, async (req, res) => {
   try {
-    const regex = new RegExp(search, 'i');
-    const users = await User.find({
-      $or: [
-        { firstName: regex },
-        { lastName: regex }
-      ]
-    }, { firstName: 1, lastName: 1, email: 1, profileId: 1 });
-    res.json(users.map(u => ({
-      profileId: u.profileId,
-      firstName: u.firstName,
-      lastName: u.lastName,
-      email: u.email
-    })));
+    let { userId, role, teamId, leagueId } = req.body;
+    if (!userId || !role) return res.status(400).json({ error: 'userId and role required' });
+
+    const requester = req.user;
+    const isGod = requester.god_admin === true;
+    let allowed = isGod;
+
+    // If assigning a team admin and leagueId not provided, try to resolve leagueId from teamId
+    if (role === 'admin' && !leagueId && teamId) {
+      try {
+        const leagueWithTeam = await League.findOne({ 'teams.teamId': teamId });
+        if (leagueWithTeam) {
+          leagueId = leagueWithTeam.leagueId;
+        }
+      } catch (e) {
+        // ignore resolution error; authorization will fail if not resolvable
+      }
+    }
+
+    if (!allowed) {
+      if (role === 'admin') {
+        // For assigning a team admin we allow requester if they are super_admin for the same league
+        if (leagueId) {
+          allowed = Array.isArray(requester.roles) && requester.roles.some(r => r.role === 'super_admin' && r.leagueId === leagueId);
+        } else {
+          // no leagueId provided and could not resolve -> do not allow
+          allowed = false;
+        }
+      } else if (role === 'super_admin') {
+        // assigning super_admin is sensitive: only god_admin allowed
+        allowed = false;
+      }
+    }
+
+    if (!allowed) return res.status(403).json({ error: 'Not authorized to assign this role' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    let updated = false;
+
+    // Treat god_admin as a boolean on the user, not as a role in the roles array
+    if (role === 'god_admin') {
+      // Only a god_admin may assign another god_admin (allowed already enforces this)
+      user.god_admin = true;
+      updated = true;
+    } else if (leagueId || teamId) {
+      for (let r of user.roles) {
+        if ((leagueId && r.leagueId === leagueId) || (teamId && r.teamId === teamId)) {
+          r.role = role;
+          updated = true;
+          break;
+        }
+      }
+      if (!updated) {
+        user.roles.push({ leagueId: leagueId || null, teamId: teamId || null, role });
+        updated = true;
+      }
+    } else {
+      if (user.roles.length > 0) {
+        user.roles[0].role = role;
+      } else {
+        user.roles.push({ leagueId: null, teamId: null, role });
+      }
+      updated = true;
+    }
+
+    await user.save();
+    return res.status(200).json({ message: 'Role assigned', user });
   } catch (err) {
-    res.status(500).json({ error: 'Failed to search players.' });
+    console.error('POST /api/assign-role error', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// POST /api/remove-role
+// Body: { userId, role: 'admin'|'super_admin'|'god_admin'|..., teamId?, leagueId? }
+// Requires authentication. Performs basic authorization checks similar to assign-role.
+app.post('/api/remove-role', getUserFromToken, async (req, res) => {
+  try {
+    let { userId, role, teamId, leagueId } = req.body;
+    if (!userId || !role) return res.status(400).json({ error: 'userId and role required' });
+
+    const requester = req.user;
+    const isGod = requester.god_admin === true;
+    let allowed = isGod;
+
+    // If removing a team-scoped admin and leagueId not provided, try to resolve leagueId from teamId
+    if (role === 'admin' && !leagueId && teamId) {
+      try {
+        const leagueWithTeam = await League.findOne({ 'teams.teamId': teamId });
+        if (leagueWithTeam) {
+          leagueId = leagueWithTeam.leagueId;
+        }
+      } catch (e) {
+        // ignore resolution error; authorization will fail if not resolvable
+      }
+    }
+
+    if (!allowed) {
+      if (role === 'admin') {
+        // allow super_admins of the same league to remove team admins
+        if (leagueId) {
+          allowed = Array.isArray(requester.roles) && requester.roles.some(r => r.role === 'super_admin' && r.leagueId === leagueId);
+        } else {
+          allowed = false;
+        }
+      } else if (role === 'super_admin') {
+        // removing super_admin is sensitive: only god_admin allowed
+        allowed = false;
+      } else {
+        // For other roles (including god_admin), require god_admin
+        allowed = false;
+      }
+    }
+
+    if (!allowed) return res.status(403).json({ error: 'Not authorized to remove this role' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    // If removing god_admin, unset the boolean and save
+    if (role === 'god_admin') {
+      if (!user.god_admin) {
+        return res.status(404).json({ error: 'User is not a god_admin' });
+      }
+      user.god_admin = false;
+      await user.save();
+      return res.status(200).json({ message: 'Role removed', user });
+    }
+
+    // Find the exact role entry to remove. Roles are stored as objects with optional leagueId/teamId and role.
+    let removed = false;
+
+    if (leagueId || teamId) {
+      // Remove the entry that matches both role and the provided scope
+      for (let i = user.roles.length - 1; i >= 0; i--) {
+        const r = user.roles[i];
+        const matchLeague = leagueId ? (r.leagueId === leagueId) : (r.leagueId == null);
+        const matchTeam = teamId ? (r.teamId === teamId) : (r.teamId == null);
+        if (r.role === role && matchLeague && matchTeam) {
+          user.roles.splice(i, 1);
+          removed = true;
+          break;
+        }
+      }
+    } else {
+      // No scope provided: try to remove a global/unspecified scoped role that matches the name
+      for (let i = user.roles.length - 1; i >= 0; i--) {
+        const r = user.roles[i];
+        const noScope = (r.leagueId == null || r.leagueId === '') && (r.teamId == null || r.teamId === '');
+        if (r.role === role && noScope) {
+          user.roles.splice(i, 1);
+          removed = true;
+          break;
+        }
+      }
+    }
+
+    if (!removed) {
+      return res.status(404).json({ error: 'Role not found on user' });
+    }
+
+    await user.save();
+    return res.status(200).json({ message: 'Role removed', user });
+  } catch (err) {
+    console.error('POST /api/remove-role error', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 });
 

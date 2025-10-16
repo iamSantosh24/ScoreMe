@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:scorer/config.dart';
 
 class TeamHomeViewModel extends ChangeNotifier {
   bool loading = false;
@@ -13,7 +14,7 @@ class TeamHomeViewModel extends ChangeNotifier {
     notifyListeners();
     try {
       // Fetch the team members from the new endpoint
-      final response = await http.get(Uri.parse('http://192.168.1.134:3000/team-members/$teamId'));
+      final response = await http.get(Uri.parse('${Config.apiBaseUrl}/team-members/$teamId'));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         // 'players' is a list of player names

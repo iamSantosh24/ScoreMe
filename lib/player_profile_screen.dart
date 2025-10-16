@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:scorer/config.dart';
 
 class PlayerProfileScreen extends StatefulWidget {
   final String username;
@@ -27,7 +28,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
   Future<void> fetchPlayerDetails() async {
     setState(() { loading = true; });
     final res = await http.get(
-      Uri.parse('http://192.168.1.134:3000/player?username=${widget.username}'),
+      Uri.parse('${Config.apiBaseUrl}/player?username=${widget.username}'),
     );
     setState(() { loading = false; });
     if (res.statusCode == 200) {
@@ -44,7 +45,7 @@ class _PlayerProfileScreenState extends State<PlayerProfileScreen> {
 
   Future<void> assignRole(String newRole) async {
     final res = await http.post(
-      Uri.parse('http://192.168.1.134:3000/user/assign-role'),
+      Uri.parse('${Config.apiBaseUrl}/user/assign-role'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({
         'username': widget.username,

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
-const String apiBaseUrl = 'http://192.168.1.134:3000';
+import 'package:scorer/config.dart';
 
 class ExistingLeaguesViewModel extends ChangeNotifier {
   List<Map<String, dynamic>> leagues = [];
@@ -13,7 +12,7 @@ class ExistingLeaguesViewModel extends ChangeNotifier {
     isLoading = true;
     error = null;
     notifyListeners();
-    final response = await http.get(Uri.parse('$apiBaseUrl/leagues'));
+    final response = await http.get(Uri.parse('${Config.apiBaseUrl}/leagues'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
       leagues = List<Map<String, dynamic>>.from(data);
@@ -25,4 +24,3 @@ class ExistingLeaguesViewModel extends ChangeNotifier {
     notifyListeners();
   }
 }
-

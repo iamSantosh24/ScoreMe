@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'tournament_home_screen.dart';
 import 'player_profile_screen.dart';
+import 'package:scorer/config.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'profile_screen.dart';
 import 'league_home_screen.dart';
@@ -28,7 +29,7 @@ class _SearchScreenState extends State<SearchScreen> {
     setState(() { loading = true; error = ''; tournaments = []; players = []; leagues = []; teams = []; });
     try {
       final res = await http.get(
-        Uri.parse('http://192.168.1.134:3000/search?query=$query'),
+        Uri.parse('${Config.apiBaseUrl}/search?query=$query'),
       );
       print('Search response status: \\${res.statusCode}');
       print('Search response body: \\${res.body}');
