@@ -24,17 +24,18 @@ class _ManageTeamPlayersScreenState extends State<ManageTeamPlayersScreen> {
   @override
   void initState() {
     super.initState();
-    // Fetch initial team players in viewmodel
-    Future.microtask(() {
-      Provider.of<ManageTeamPlayersViewModel>(context, listen: false)
-          .fetchTeamPlayers(widget.teamId);
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => ManageTeamPlayersViewModel(),
+      // Initialize the viewmodel and immediately fetch team players so
+      // the roster is populated when the provider is created.
+      create: (_) {
+        final vm = ManageTeamPlayersViewModel();
+        vm.fetchTeamPlayers(widget.teamId);
+        return vm;
+      },
       child: Consumer<ManageTeamPlayersViewModel>(
         builder: (context, vm, _) {
           return Scaffold(

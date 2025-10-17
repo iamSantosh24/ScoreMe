@@ -188,7 +188,7 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
       context: context,
       useRootNavigator: false,
       builder: (ctx) {
-        // Dialog-local state
+        // dialog-local state
         bool loading = false;
         String selectedRole = 'player';
         String? selectedTeamId;
@@ -197,13 +197,12 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
         List<LeagueItem> leagues = List<LeagueItem>.from(screenLeagues);
         List<UserRole> roles = List<UserRole>.from(user.roles);
         if (user.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) {
-          // Represent god_admin as a synthetic UserRole so the UI can render it like other roles
           roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin'));
         }
-        bool fetched = false;
+        bool fetchedDetails = false;
 
         return StatefulBuilder(builder: (context, setStateDialog) {
-          Future<void> loadTeams() async {
+          Future<void> _loadTeams() async {
             if (teams.isNotEmpty) return;
             setStateDialog(() => loading = true);
             try {
@@ -223,7 +222,7 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
             if (mounted) setStateDialog(() => loading = false);
           }
 
-          Future<void> loadLeagues() async {
+          Future<void> _loadLeagues() async {
             if (leagues.isNotEmpty) return;
             setStateDialog(() => loading = true);
             try {
@@ -243,9 +242,9 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
             if (mounted) setStateDialog(() => loading = false);
           }
 
-          // Fetch fresh roles once
-          if (!fetched) {
-            fetched = true;
+          // fetch fresh user roles/details once when dialog opens
+          if (!fetchedDetails) {
+            fetchedDetails = true;
             Future.microtask(() async {
               setStateDialog(() => loading = true);
               try {
@@ -253,11 +252,11 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
                 if (!mounted) return;
                 if (fresh != null) {
                   roles = List<UserRole>.from(fresh.roles);
-                  if (fresh.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin'));
-                   // preload names if needed
-                   if (roles.any((r) => r.teamId != null && r.teamId!.isNotEmpty)) await loadTeams();
-                   if (roles.any((r) => r.leagueId != null && r.leagueId!.isNotEmpty)) await loadLeagues();
-                  if (mounted) setStateDialog(() { roles = List<UserRole>.from(fresh.roles); if (fresh.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin')); });
+                  if (fresh.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) {
+                    roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin'));
+                  }
+                  if (roles.any((r) => r.teamId != null && r.teamId!.isNotEmpty)) await _loadTeams();
+                  if (roles.any((r) => r.leagueId != null && r.leagueId!.isNotEmpty)) await _loadLeagues();
                   if (mounted) setState(() {
                     final idx = results.indexWhere((r) => r.id == fresh.id);
                     if (idx != -1) results[idx] = fresh;
@@ -269,18 +268,18 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
           }
 
           Future<void> doRemove(UserRole r) async {
-            final confirm = await showDialog<bool>(
+            final confirmed = await showDialog<bool>(
               context: context,
               builder: (c) => AlertDialog(
                 title: const Text('Remove role?'),
-                content: Text('Remove ${_friendlyRoleName(r.role)} from ${user.fullName}?'),
+                content: Text('${_friendlyRoleName(r.role)} will be removed from ${user.fullName}. Continue?'),
                 actions: [
                   TextButton(onPressed: () => Navigator.of(c).pop(false), child: const Text('Cancel')),
                   TextButton(onPressed: () => Navigator.of(c).pop(true), child: const Text('Remove')),
                 ],
               ),
             );
-            if (confirm != true) return;
+            if (confirmed != true) return;
             setStateDialog(() => loading = true);
             Map<String, dynamic> resp = {'ok': false, 'message': 'Unknown error'};
             try {
@@ -293,21 +292,37 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
 
             final ok = resp['ok'] is bool ? resp['ok'] as bool : false;
             if (ok) {
+              // update dialog and parent results from returned user or fetched user
               final updated = resp['user'] is User ? resp['user'] as User : null;
-              if (updated != null) {
-                setStateDialog(() { roles = List<UserRole>.from(updated.roles); if (updated.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin')); });
-                if (mounted) setState(() {
-                  final i = results.indexWhere((u) => u.id == updated.id);
-                  if (i != -1) results[i] = updated;
-                });
-              } else {
-                setStateDialog(() { roles.removeWhere((er) => er.role == r.role && er.teamId == r.teamId && er.leagueId == r.leagueId); });
+              User? finalUser = updated;
+              if (finalUser == null) {
+                try {
+                  final fetched = await roleService.getUserById(user.id);
+                  if (fetched != null) finalUser = fetched;
+                } catch (_) {}
               }
+
+              if (finalUser != null) {
+                final fu = finalUser; // capture non-null user for closures
+                setStateDialog(() {
+                  roles = List<UserRole>.from(fu.roles);
+                  if (fu.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) {
+                    roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin'));
+                  }
+                });
+                if (mounted) {
+                  setState(() {
+                    final idx = results.indexWhere((r) => r.id == fu.id);
+                    if (idx != -1) results[idx] = fu;
+                  });
+                }
+              }
+
               final serverMsg = _formatServerMessage(resp['message']?.toString() ?? 'Role removed', ok);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(serverMsg)));
             } else {
               final msg = resp['message']?.toString() ?? 'Failed to remove role';
-              final serverMsg = _formatServerMessage(msg, ok);
+              final serverMsg = _formatServerMessage(msg, false);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(serverMsg)));
             }
           }
@@ -339,24 +354,39 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
             setStateDialog(() => loading = false);
 
             final ok = resp['ok'] is bool ? resp['ok'] as bool : false;
+            final updated = resp['user'] is User ? resp['user'] as User : null;
+            User? finalUser = updated;
+            if (finalUser == null) {
+              try {
+                final fetched = await roleService.getUserById(user.id);
+                if (fetched != null) finalUser = fetched;
+              } catch (_) {}
+            }
+
             if (ok) {
-              final updated = resp['user'] is User ? resp['user'] as User : null;
-              if (updated != null) {
-                setStateDialog(() { roles = List<UserRole>.from(updated.roles); if (updated.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin')); });
+              if (finalUser != null) {
+                final fu = finalUser;
+                setStateDialog(() {
+                  roles = List<UserRole>.from(fu.roles);
+                  if (fu.godAdmin == true && !roles.any((rr) => rr.role.toLowerCase() == 'god_admin')) {
+                    roles.insert(0, UserRole(leagueId: null, teamId: null, role: 'god_admin'));
+                  }
+                });
                 if (mounted) setState(() {
-                  final i = results.indexWhere((r) => r.id == updated.id);
-                  if (i != -1) results[i] = updated;
+                  final idx = results.indexWhere((r) => r.id == fu.id);
+                  if (idx != -1) results[idx] = fu;
                 });
               }
               final serverMsg = _formatServerMessage(resp['message']?.toString() ?? 'Role assigned', ok);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(serverMsg)));
             } else {
               final msg = resp['message']?.toString() ?? 'Failed to assign role';
-              final serverMsg = _formatServerMessage(msg, ok);
+              final serverMsg = _formatServerMessage(msg, false);
               ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(serverMsg)));
             }
           }
 
+          // Dialog UI
           return AlertDialog(
             title: Text('Roles for ${user.fullName}'),
             content: ConstrainedBox(
@@ -386,7 +416,14 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Row(mainAxisSize: MainAxisSize.min, children: [Text(roleLabel, style: const TextStyle(fontWeight: FontWeight.w600)), const Spacer(), IconButton(icon: const Icon(Icons.delete_outline), onPressed: loading ? null : () => doRemove(r))]),
+                                Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text(roleLabel, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    const Spacer(),
+                                    IconButton(icon: const Icon(Icons.delete_outline), onPressed: loading ? null : () => doRemove(r)),
+                                  ],
+                                ),
                                 if (r.leagueId != null) Text('League: ${screenLeagueNameForId(r.leagueId)}'),
                                 if (r.teamId != null) Text('Team: ${screenTeamNameForId(r.teamId)}'),
                               ],
@@ -413,86 +450,107 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
                           selectedTeamId = null;
                           selectedLeagueId = null;
                         });
-                        if (selectedRole == 'admin') loadTeams();
-                        if (selectedRole == 'super_admin') loadLeagues();
+                        if (selectedRole == 'admin') _loadTeams();
+                        if (selectedRole == 'super_admin') _loadLeagues();
                       },
-                      decoration: const InputDecoration(labelText: 'Role'),
+                      decoration: InputDecoration(labelText: 'Assign new role', border: OutlineInputBorder()),
                     ),
 
-                    if (selectedRole == 'admin')
-                      teams.isEmpty
-                          ? const Padding(padding: EdgeInsets.only(top: 8), child: Text('No teams available', style: TextStyle(color: Colors.grey)))
-                          : DropdownButtonFormField<String>(
-                              value: selectedTeamId,
-                              items: teams.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))).toList(),
-                              onChanged: loading ? null : (v) => setStateDialog(() => selectedTeamId = v),
-                              decoration: const InputDecoration(labelText: 'Team'),
-                            ),
+                    if (selectedRole == 'admin' && teams.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedTeamId,
+                        items: teams.map((t) => DropdownMenuItem(value: t.id, child: Text(t.name))).toList(),
+                        onChanged: loading ? null : (v) => setStateDialog(() => selectedTeamId = v as String?),
+                        decoration: InputDecoration(labelText: 'Select team', border: OutlineInputBorder()),
+                      ),
+                    ],
 
-                    if (selectedRole == 'super_admin')
-                      leagues.isEmpty
-                          ? const Padding(padding: EdgeInsets.only(top: 8), child: Text('No leagues available', style: TextStyle(color: Colors.grey)))
-                          : DropdownButtonFormField<String>(
-                              value: selectedLeagueId,
-                              items: leagues.map((l) => DropdownMenuItem(value: l.id, child: Text(l.name))).toList(),
-                              onChanged: loading ? null : (v) => setStateDialog(() => selectedLeagueId = v),
-                              decoration: const InputDecoration(labelText: 'League'),
-                            ),
+                    if (selectedRole == 'super_admin' && leagues.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<String>(
+                        value: selectedLeagueId,
+                        items: leagues.map((l) => DropdownMenuItem(value: l.id, child: Text(l.name))).toList(),
+                        onChanged: loading ? null : (v) => setStateDialog(() => selectedLeagueId = v as String?),
+                        decoration: InputDecoration(labelText: 'Select league', border: OutlineInputBorder()),
+                      ),
+                    ],
 
-                    if (loading) const Padding(padding: EdgeInsets.only(top: 12), child: Center(child: CircularProgressIndicator())),
+                    const SizedBox(height: 12),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(onPressed: loading ? null : () => Navigator.of(ctx).pop(), child: const Text('Close')),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: loading ? null : () => doAssign(),
+                          child: loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2.0)) : const Text('Assign'),
+                        ),
+                      ],
+                    ),
                   ],
                 ),
               ),
             ),
-            actions: [
-              TextButton(onPressed: loading ? null : () => Navigator.of(context).pop(), child: const Text('Close')),
-              ElevatedButton(onPressed: loading ? null : doAssign, child: const Text('Assign')),
-            ],
           );
         });
       },
     );
   }
 
+  String _friendlyRoleName(String role) {
+    final r = role.toLowerCase();
+    if (r == 'player') return 'Player';
+    if (r == 'admin') return 'Admin';
+    if (r == 'super_admin' || r == 'super admin') return 'Super Admin';
+    if (r == 'god_admin' || r == 'god admin') return 'God Admin';
+    final cleaned = r.replaceAll('_', ' ');
+    return cleaned.split(' ').map((s) => s.isEmpty ? '' : '${s[0].toUpperCase()}${s.substring(1)}').join(' ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final service = Provider.of<RoleService>(context, listen: false);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Assign Roles'),
-      ),
+      appBar: AppBar(title: const Text('Assign Roles')),
       body: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Column(
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    decoration: const InputDecoration(labelText: 'Search users', border: OutlineInputBorder()),
-                    onChanged: (v) => setState(() => query = v),
-                    onSubmitted: (_) => doSearch(),
-                  ),
+            Row(children: [
+              Expanded(
+                child: TextField(
+                  onChanged: (v) => query = v,
+                  decoration: const InputDecoration(labelText: 'Search users', border: OutlineInputBorder()),
+                  onSubmitted: (_) => doSearch(),
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(onPressed: doSearch, child: const Text('Search')),
-              ],
-            ),
-            const SizedBox(height: 12),
-            if (loading) const Center(child: CircularProgressIndicator()),
-            if (!loading && error.isNotEmpty) Text(error, style: const TextStyle(color: Colors.red)),
-            if (!loading && results.isNotEmpty)
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: loading ? null : doSearch,
+                child: loading ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2.0)) : const Text('Search'),
+              )
+            ]),
+            if (error.isNotEmpty)
+              Padding(padding: const EdgeInsets.symmetric(vertical: 8.0), child: Text(error, style: TextStyle(color: Theme.of(context).colorScheme.error))),
+            const SizedBox(height: 8),
+            if (loading && results.isEmpty)
+              const Expanded(child: Center(child: CircularProgressIndicator())),
+            if (!loading && results.isEmpty)
+              const Expanded(child: Center(child: Text('No results', style: TextStyle(color: Colors.grey)))),
+            if (results.isNotEmpty)
               Expanded(
                 child: ListView.separated(
                   itemCount: results.length,
                   separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, idx) {
+                  itemBuilder: (ctx, idx) {
                     final u = results[idx];
-                    final roleText = u.roles.isNotEmpty ? u.roles.map((r) => r.role).join(', ') : (u.godAdmin == true ? 'God Admin' : 'No roles');
+                    final rolesText = u.roles.isNotEmpty ? u.roles.map((r) => _friendlyRoleName(r.role)).join(', ') : (u.godAdmin == true ? 'God Admin' : 'No roles');
                     return ListTile(
                       title: Text(u.fullName),
-                      subtitle: Text(roleText),
-                      trailing: TextButton(onPressed: () => _showRoleDialog(u), child: const Text('Change roles')),
-                      onTap: () => _showRoleDialog(u),
+                      subtitle: Text(rolesText),
+                      trailing: IconButton(icon: const Icon(Icons.edit), onPressed: () => _showRoleDialog(u)),
                     );
                   },
                 ),
@@ -501,19 +559,5 @@ class _AssignRolesScreenState extends State<AssignRolesScreen> {
         ),
       ),
     );
-  }
-
-  String _friendlyRoleName(String role) {
-    // Small helper to map internal role names to friendly display names.
-    switch (role.toLowerCase()) {
-      case 'admin':
-        return 'Admin (team-scoped)';
-      case 'super_admin':
-        return 'Super Admin (league-scoped)';
-      case 'god_admin':
-        return 'God Admin (global)';
-      default:
-        return role;
-    }
   }
 }

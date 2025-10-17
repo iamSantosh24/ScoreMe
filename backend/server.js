@@ -223,6 +223,19 @@ app.post('/update-user-role', getUserFromToken, async (req, res) => {
       updatedFields.teamId = teamId;
     }
     await user.save();
+
+    // If we've assigned an 'admin' role scoped to a team, also add the user's profileId
+    // to that team's players array to keep the teams collection in sync.
+    if (role === 'admin' && teamId) {
+      try {
+        if (user.profileId) {
+          await Team.updateOne({ teamId }, { $addToSet: { players: user.profileId } }).exec();
+        }
+      } catch (e) {
+        console.error('Failed to add user to team roster after update-user-role', e);
+      }
+    }
+
     return res.status(200).json({ message: 'User updated.', updatedFields, user });
   } catch (err) {
     return res.status(500).json({ error: 'Server error.' });
@@ -406,6 +419,8 @@ app.get('/api/users', async (req, res) => {
     const mapped = users.map(u => ({
       _id: u._id,
       username: u.email || u.profileId,
+      firstName: u.firstName,
+      lastName: u.lastName,
       displayName: `${u.firstName || ''}${u.lastName ? ' ' + u.lastName : ''}`.trim(),
       email: u.email,
       profileId: u.profileId
@@ -515,6 +530,20 @@ app.post('/api/assign-role', getUserFromToken, async (req, res) => {
     }
 
     await user.save();
+
+    // If we've just assigned an 'admin' role scoped to a team, also add
+    // the user's profileId to that team's roster to keep data in sync.
+    // Use $addToSet for atomic add (no duplicates) and to be race-safe.
+    if (role === 'admin' && teamId) {
+      try {
+        if (user.profileId) {
+          await Team.updateOne({ teamId }, { $addToSet: { players: user.profileId } }).exec();
+        }
+      } catch (e) {
+        console.error('Failed to add user to team roster after assigning admin role', e);
+      }
+    }
+
     return res.status(200).json({ message: 'Role assigned', user });
   } catch (err) {
     console.error('POST /api/assign-role error', err);
@@ -611,6 +640,18 @@ app.post('/api/remove-role', getUserFromToken, async (req, res) => {
     }
 
     await user.save();
+    // If we've just removed an 'admin' role scoped to a team, also remove
+    // the user's profileId from that team's roster to keep data in sync.
+    // Use $pull for an atomic removal instead of reading/modifying the doc.
+    if (role === 'admin' && teamId) {
+      try {
+        if (user.profileId) {
+          await Team.updateOne({ teamId }, { $pull: { players: user.profileId } }).exec();
+        }
+      } catch (e) {
+        console.error('Failed to remove user from team roster after removing admin role', e);
+      }
+    }
     return res.status(200).json({ message: 'Role removed', user });
   } catch (err) {
     console.error('POST /api/remove-role error', err);
@@ -618,6 +659,78 @@ app.post('/api/remove-role', getUserFromToken, async (req, res) => {
   }
 });
 
+// Alias endpoint so frontend can call /players?search=... (some clients expect this path)
+app.get('/players', async (req, res) => {
+  try {
+    const { search } = req.query;
+    let filter = {};
+    if (search && typeof search === 'string' && search.trim() !== '') {
+      const q = search.trim();
+      const re = new RegExp(q, 'i');
+      filter = {
+        $or: [
+          { firstName: re },
+          { lastName: re },
+          { email: re },
+          { profileId: re }
+        ]
+      };
+    }
+    const users = await User.find(filter).limit(50).select('firstName lastName email profileId');
+    const mapped = users.map(u => ({
+      _id: u._id,
+      username: u.email || u.profileId,
+      firstName: u.firstName,
+      lastName: u.lastName,
+      displayName: `${u.firstName || ''}${u.lastName ? ' ' + u.lastName : ''}`.trim(),
+      email: u.email,
+      profileId: u.profileId
+    }));
+    res.json(mapped);
+  } catch (err) {
+    console.error('GET /players error', err);
+    res.status(500).json({ error: 'Failed to fetch players' });
+  }
+});
+
+// Endpoint to add/remove a player from a team
+// Expected body: { action: 'add'|'remove', player: '<profileId>' }
+app.post('/team/:teamId/player', async (req, res) => {
+  const { teamId } = req.params;
+  const { action, player } = req.body;
+  if (!action || !player) return res.status(400).json({ error: 'action and player are required' });
+
+  try {
+    // Ensure the player exists in users collection when adding
+    const userExists = await User.exists({ profileId: player });
+    if (action === 'add') {
+      if (!userExists) return res.status(404).json({ error: 'Player not found.' });
+      // Atomic add: $addToSet ensures no duplicates and is race-safe
+      const resUpdate = await Team.updateOne({ teamId }, { $addToSet: { players: player } }).exec();
+      // Mongoose update result differs by driver version; check common fields
+      const matched = (resUpdate && (resUpdate.matchedCount || resUpdate.n || resUpdate.matched)) || 0;
+      if (!matched) {
+        return res.status(404).json({ error: 'Team not found.' });
+      }
+      return res.status(200).json({ message: 'Player added to team.' });
+    } else if (action === 'remove') {
+      // Atomic remove: $pull
+      const resUpdate = await Team.updateOne({ teamId }, { $pull: { players: player } }).exec();
+      const matched = (resUpdate && (resUpdate.matchedCount || resUpdate.n || resUpdate.matched)) || 0;
+      if (!matched) {
+        return res.status(404).json({ error: 'Team not found.' });
+      }
+      return res.status(200).json({ message: 'Player removed from team.' });
+    } else {
+      return res.status(400).json({ error: 'Invalid action. Use "add" or "remove".' });
+    }
+  } catch (err) {
+    console.error('/team/:teamId/player error', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// Start server
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
